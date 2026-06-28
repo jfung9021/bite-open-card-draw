@@ -76,7 +76,7 @@ function revealLabel(phase: string) {
 }
 
 export default function StagePage() {
-  const roundNumber = 1;
+  const { currentRound: roundNumber } = adminState.roundStateStore.getSnapshot();
   const view = buildStageRoundView(adminState.drawStateStore, roundNumber);
   const snapshot = getVotingRoundSnapshot(roundNumber);
   const result = adminState.resultStore.getRoundResult(roundNumber);

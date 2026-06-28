@@ -5,7 +5,7 @@ import { buildStageRoundView } from "@/lib/stage/stage-view";
 export const dynamic = "force-dynamic";
 
 export default function ChartsPage() {
-  const roundNumber = 1;
+  const { currentRound: roundNumber } = adminState.roundStateStore.getSnapshot();
   const result = adminState.resultStore.getRoundResult(roundNumber);
 
   if (result?.revealPhase === "final") {

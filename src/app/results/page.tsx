@@ -4,13 +4,13 @@ import { adminState } from "@/lib/server/admin-state";
 export const dynamic = "force-dynamic";
 
 export default function ResultsPage() {
-  const roundNumber = 1;
+  const { currentRound: roundNumber } = adminState.roundStateStore.getSnapshot();
   const result = adminState.resultStore.getRoundResult(roundNumber);
 
   if (!result || result.revealPhase !== "final") {
     return (
       <main className="min-h-screen">
-        <RoundHeader title="Round 1 Results" status="Awaiting stage reveal" />
+        <RoundHeader title={`Round ${roundNumber} Results`} status="Awaiting stage reveal" />
         <section className="mx-auto max-w-3xl px-5 py-5">
           <div className="metal-panel rounded-lg p-5 text-center text-lg font-bold text-metal-300">
             <p>Voting is closed.</p>

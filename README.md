@@ -4,7 +4,7 @@ Tournament voting and stage visualization app for Pump It Up Open Stage.
 
 ## Current status
 
-Phase 10 testing, edge cases, and review hardening is complete.
+Phase 11 deployment readiness and rehearsal tooling is complete.
 
 ## Source files
 

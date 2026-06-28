@@ -473,3 +473,51 @@ Status: complete
 - Playwright browser binaries must be installed locally or in CI with `npx playwright install chromium`.
 - E2E uses a test-only admin password and in-memory state on a local production Next server.
 - Full multi-round browser e2e coverage remains limited to a Round 1 smoke path; deeper round progression is still tied to later current-round work.
+
+## Phase 11 - Deployment Readiness And Rehearsal Tooling
+
+Status: complete
+
+### Acceptance Criteria
+
+- Production build readiness: `npm run build` passes with dynamic public/admin routes
+- Deployment workflow: `docs/deployment-readiness.md` documents Vercel, Supabase, environment variables, build checks, and free-tier constraints
+- Data setup workflow: chart import, image cache, chart exclusion review, roster import, active-player review, duplicate username blocking, and pool validation are documented
+- Rehearsal mode: admin can start rehearsal mode, reset rehearsal data, and see a visible rehearsal/tournament mode indicator
+- Test roster: starting rehearsal mode resets operational state and loads 12 disposable rehearsal players
+- Current round control: admin can set or advance the current round; `/stage`, `/vote`, `/charts`, and `/results` read that server current-round state
+- Forced tiebreak rehearsal: rehearsal-only seeding creates two-way least-ban tiebreak ballots after both current-round sets are drawn
+- Data separation: rehearsal reset clears operational state and returns to tournament mode before real event use
+- Venue checklist: `docs/event-day-runbook.md` includes stage laptop, projector/stream capture, QR readability, phone testing, admin laptop, host lock, and private CSV download location checklists
+- Rehearsal runbook: `docs/rehearsal-runbook.md` documents a complete four-round rehearsal using test data
+- Lint: passed with `npm run lint`
+- Typecheck: passed with `npm run typecheck`
+- Unit/integration tests: passed with `npm run test` (19 files, 51 tests)
+- E2E: passed with `npm run test:e2e` (1 Playwright test)
+- Chart import: passed with `npm run import:charts`
+- Image fallback cache: passed with `npm run cache:chart-images -- --fallback-only`
+- Production dependency audit: passed with `npm audit --omit=dev`
+- Production build: passed with `npm run build`
+
+### Changed Files
+
+- Added current-round and rehearsal state under `src/lib/round`
+- Extended server-only admin state with round state and operational reset support
+- Added admin actions and UI for current round, rehearsal mode, rehearsal reset, and forced tiebreak seeding
+- Updated current-round public routes to use server current-round state
+- Added deployment readiness and rehearsal runbooks
+- Expanded event-day and admin runbooks
+- Updated README, testing checklist, and phase status
+
+### Manual Review
+
+- Product rules: fixed round chart-set definitions are unchanged; current-round state only selects which already-defined round is active.
+- Rehearsal safety: rehearsal controls are host-only; start/reset require admin password re-entry and clear destructive summaries.
+- Data separation: rehearsal mode visibly labels the admin page and reset returns to tournament mode.
+- Deployment: documentation keeps secrets out of Git and calls out the remaining Supabase persistence requirement before multi-instance/serverless event use.
+
+### Risks And Assumptions
+
+- Operational stores remain in-memory. Local rehearsal works in one server process; production event use still needs Supabase-backed persistence or an explicitly controlled single-process host.
+- Forced tiebreak seeding is a rehearsal helper only and is blocked outside rehearsal mode.
+- Full browser e2e still exercises Round 1; the four-round rehearsal workflow is documented and supported through current-round admin controls.

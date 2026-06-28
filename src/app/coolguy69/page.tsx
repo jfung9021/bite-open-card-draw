@@ -5,6 +5,7 @@ import { ROUND_SET_DEFINITIONS } from "@/lib/tournament";
 import {
   addInactivePlayerToCurrentRoundAction,
   addPlayerAction,
+  advanceCurrentRoundAction,
   adminLoginAction,
   adminLogoutAction,
   advanceResultRevealAction,
@@ -21,7 +22,11 @@ import {
   rerollOneChartAction,
   rerollRoundSetAction,
   resumeVotingAction,
+  resetRehearsalModeAction,
+  seedRehearsalTiebreakAction,
   setPlayerActiveStatusAction,
+  setCurrentRoundAction,
+  startRehearsalModeAction,
   takeHostControlAction,
 } from "./actions";
 import { AdminInactivityTimer } from "./_components/AdminInactivityTimer";
@@ -79,7 +84,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const inactivePlayers = players.filter((player) => !player.active);
   const activeCount = adminState.rosterStore.getActivePlayerCount();
   const canControl = hostSnapshot.status === "active";
-  const currentRoundNumber = 1;
+  const roundSnapshot = adminState.roundStateStore.getSnapshot();
+  const currentRoundNumber = roundSnapshot.currentRound;
   const votingSnapshot = getVotingRoundSnapshot(currentRoundNumber);
   const currentRoundDraws = getRoundDrawRecords(currentRoundNumber);
   const submittedPlayerIds = getSubmittedPlayerIdsForRound(currentRoundNumber);
@@ -100,6 +106,115 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               {error}
             </section>
           ) : null}
+          <section className="metal-panel rounded-lg p-4">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ember-300">
+                  Event Mode
+                </p>
+                <h2 className="mt-1 text-2xl font-black uppercase text-white">
+                  Current Round {currentRoundNumber}
+                </h2>
+              </div>
+              <p className="rounded border border-metal-700 bg-black/25 px-3 py-2 text-sm font-bold uppercase text-metal-300">
+                {roundSnapshot.rehearsalMode ? "Rehearsal mode" : "Tournament mode"}
+              </p>
+            </div>
+            {roundSnapshot.rehearsalMode ? (
+              <p className="mt-4 rounded border border-ember-300/25 bg-ember-900/15 p-3 text-sm text-ember-300">
+                Rehearsal mode uses disposable in-memory data. Reset rehearsal data before switching back to
+                tournament operation.
+              </p>
+            ) : null}
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              <form action={setCurrentRoundAction} className="flex flex-wrap gap-2">
+                <select
+                  name="roundNumber"
+                  disabled={!canControl}
+                  defaultValue={currentRoundNumber}
+                  className="rounded border border-metal-700 bg-black/30 px-3 py-2 text-sm text-white"
+                >
+                  <option value="1">Round 1</option>
+                  <option value="2">Round 2</option>
+                  <option value="3">Round 3</option>
+                  <option value="4">Round 4</option>
+                </select>
+                <button
+                  className="button-metal rounded px-3 py-2 text-xs font-bold uppercase disabled:opacity-40"
+                  disabled={!canControl}
+                  type="submit"
+                >
+                  Set Current Round
+                </button>
+              </form>
+              <form action={advanceCurrentRoundAction}>
+                <button
+                  className="rounded border border-metal-700 px-3 py-2 text-xs font-bold uppercase text-metal-300 disabled:opacity-40"
+                  disabled={!canControl || currentRoundNumber === 4}
+                  type="submit"
+                >
+                  Advance Round
+                </button>
+              </form>
+            </div>
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              <form action={startRehearsalModeAction} className="rounded border border-metal-700 bg-black/20 p-3">
+                <p className="text-sm font-bold text-white">Start rehearsal mode</p>
+                <p className="mt-1 text-xs text-metal-300">
+                  This resets operational state and loads a 12-player test roster.
+                </p>
+                <input
+                  name="adminPassword"
+                  type="password"
+                  required
+                  disabled={!canControl}
+                  placeholder="Admin password"
+                  className="mt-3 w-full rounded border border-metal-700 bg-black/30 px-3 py-2 text-sm text-white"
+                />
+                <button
+                  className="button-metal mt-3 w-full rounded px-3 py-2 text-xs font-bold uppercase disabled:opacity-40"
+                  disabled={!canControl}
+                  type="submit"
+                >
+                  Start Rehearsal
+                </button>
+              </form>
+              <form action={seedRehearsalTiebreakAction} className="rounded border border-metal-700 bg-black/20 p-3">
+                <p className="text-sm font-bold text-white">Force rehearsal tiebreak</p>
+                <p className="mt-1 text-xs text-metal-300">
+                  After both current-round sets are drawn, seed ballots that create a two-chart least-ban tie.
+                </p>
+                <button
+                  className="button-metal mt-3 w-full rounded px-3 py-2 text-xs font-bold uppercase disabled:opacity-40"
+                  disabled={!canControl || !roundSnapshot.rehearsalMode}
+                  type="submit"
+                >
+                  Seed Tiebreak
+                </button>
+              </form>
+              <form action={resetRehearsalModeAction} className="rounded border border-metal-700 bg-black/20 p-3">
+                <p className="text-sm font-bold text-white">Reset rehearsal data</p>
+                <p className="mt-1 text-xs text-metal-300">
+                  This clears rehearsal state and returns to tournament mode.
+                </p>
+                <input
+                  name="adminPassword"
+                  type="password"
+                  required
+                  disabled={!canControl}
+                  placeholder="Admin password"
+                  className="mt-3 w-full rounded border border-metal-700 bg-black/30 px-3 py-2 text-sm text-white"
+                />
+                <button
+                  className="mt-3 w-full rounded border border-ember-300/40 px-3 py-2 text-xs font-bold uppercase text-ember-300 disabled:opacity-40"
+                  disabled={!canControl}
+                  type="submit"
+                >
+                  Reset Rehearsal
+                </button>
+              </form>
+            </div>
+          </section>
           <section className="metal-panel rounded-lg p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
