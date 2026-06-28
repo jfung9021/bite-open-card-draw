@@ -24,7 +24,7 @@ function votingStatusLabel(snapshot: VotingRoundSnapshot) {
 }
 
 export default function VotePage() {
-  const roundNumber = 1;
+  const { currentRound: roundNumber } = adminState.roundStateStore.getSnapshot();
   const snapshot = getVotingRoundSnapshot(roundNumber);
   const draws = getRoundDrawRecords(roundNumber);
   const submittedPlayerIds = getSubmittedPlayerIdsForRound(roundNumber);

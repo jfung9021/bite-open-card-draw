@@ -127,3 +127,12 @@ This checklist is a Phase 1 baseline. It should be expanded as automated tests a
 - Manual overrides before result computation keep export metadata.
 - 100 eligible players with multiple edits produce 100 latest ballots.
 - Client components do not reference server-only secret environment names.
+
+## Phase 11 Deployment And Rehearsal Tests
+
+- Current round state drives `/stage`, `/vote`, `/charts`, and `/results`.
+- Admin can set and advance the current round.
+- Rehearsal mode loads a disposable 12-player roster.
+- Rehearsal reset clears operational state and returns to tournament mode.
+- Forced rehearsal tiebreak seeding is blocked outside rehearsal mode.
+- Deployment, data setup, event-day, and rehearsal workflows are documented.

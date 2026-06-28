@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createHostToken } from "@/lib/admin/host-lock";
 import { generatePrivateBallotCsv } from "@/lib/results/private-csv";
-import { adminState } from "@/lib/server/admin-state";
+import { adminState, resetTournamentOperationalState } from "@/lib/server/admin-state";
 import { getRoundDrawRecords, getVotingRoundSnapshot, revalidateTournamentViews } from "@/lib/server/voting-round";
 import {
   clearAdminCookies,
@@ -421,4 +421,136 @@ export async function downloadPrivateCsvAction(roundNumber: 1 | 2 | 3 | 4) {
       ballots: adminState.ballotStore.listForRound(roundNumber),
     }),
   };
+}
+
+export async function setCurrentRoundAction(formData: FormData) {
+  await requireActiveHost();
+
+  try {
+    adminState.roundStateStore.setCurrentRound(Number(getString(formData, "roundNumber")) as 1 | 2 | 3 | 4);
+  } catch (error) {
+    redirectWithError(error instanceof Error ? error.message : "Could not set current round.");
+  }
+
+  revalidateTournamentViews(revalidatePath);
+}
+
+export async function advanceCurrentRoundAction() {
+  await requireActiveHost();
+
+  try {
+    adminState.roundStateStore.advanceRound();
+  } catch (error) {
+    redirectWithError(error instanceof Error ? error.message : "Could not advance round.");
+  }
+
+  revalidateTournamentViews(revalidatePath);
+}
+
+export async function startRehearsalModeAction(formData: FormData) {
+  await requireActiveHost();
+
+  try {
+    await verifyDangerousActionPassword(getString(formData, "adminPassword"));
+    resetTournamentOperationalState();
+    adminState.roundStateStore.setCurrentRound(1);
+    adminState.roundStateStore.setRehearsalMode(true);
+
+    Array.from({ length: 12 }, (_, index) => `Rehearsal Player ${String(index + 1).padStart(2, "0")}`).forEach(
+      (startggUsername) => {
+        adminState.rosterStore.createOrUpdatePlayer({ startggUsername, active: true });
+      },
+    );
+  } catch (error) {
+    redirectWithError(error instanceof Error ? error.message : "Could not start rehearsal mode.");
+  }
+
+  revalidateTournamentViews(revalidatePath);
+}
+
+export async function resetRehearsalModeAction(formData: FormData) {
+  await requireActiveHost();
+
+  try {
+    await verifyDangerousActionPassword(getString(formData, "adminPassword"));
+    resetTournamentOperationalState();
+    adminState.roundStateStore.setCurrentRound(1);
+    adminState.roundStateStore.setRehearsalMode(false);
+  } catch (error) {
+    redirectWithError(error instanceof Error ? error.message : "Could not reset rehearsal data.");
+  }
+
+  revalidateTournamentViews(revalidatePath);
+}
+
+export async function seedRehearsalTiebreakAction() {
+  await requireActiveHost();
+
+  try {
+    const { currentRound, rehearsalMode } = adminState.roundStateStore.getSnapshot();
+
+    if (!rehearsalMode) {
+      throw new Error("Rehearsal mode must be active before seeding a forced tiebreak.");
+    }
+
+    const draws = getRoundDrawRecords(currentRound);
+    const snapshot = getVotingRoundSnapshot(currentRound);
+
+    if (adminState.resultStore.getRoundResult(currentRound)) {
+      throw new Error("Rehearsal tiebreak ballots must be seeded before results are computed.");
+    }
+
+    if (draws.length !== 2) {
+      throw new Error("Draw both sets before seeding rehearsal ballots.");
+    }
+
+    if (snapshot.status === "ready_to_vote") {
+      adminState.votingWindowStore.openVoting({
+        roundNumber: currentRound,
+        drawsReady: true,
+        eligiblePlayers: snapshot.eligiblePlayers,
+      });
+    } else if (!snapshot.canSubmit && !snapshot.canAcceptManualBallot) {
+      throw new Error("Rehearsal ballots can be seeded only before results reveal.");
+    }
+
+    const players = adminState.rosterStore.listEligiblePlayersForRound(currentRound).slice(0, 3);
+
+    if (players.length < 3) {
+      throw new Error("At least three rehearsal players are required to seed a tiebreak.");
+    }
+
+    const banPatterns = [
+      [2, 3],
+      [4, 5],
+      [6, 2],
+    ];
+
+    players.forEach((player, playerIndex) => {
+      adminState.ballotStore.submit(
+        {
+          roundNumber: currentRound,
+          playerId: player.id,
+          playerStartggUsername: player.startggUsername,
+          choices: draws.map((draw) => ({
+            roundSetId: draw.id,
+            displayLabel: draw.displayLabel,
+            noBans: false,
+            bannedChartIds: banPatterns[playerIndex]?.map((chartIndex) => draw.charts[chartIndex]?.id ?? "") ?? [],
+          })),
+        },
+        draws,
+        new Date().toISOString(),
+        {
+          source: "manual_admin",
+          manualReason: "Rehearsal forced two-way tiebreak",
+          manualOverride: getVotingRoundSnapshot(currentRound).postCloseManualBallotsAreOverrides,
+        },
+      );
+    });
+  } catch (error) {
+    redirectWithError(error instanceof Error ? error.message : "Could not seed rehearsal tiebreak.");
+  }
+
+  revalidateTournamentViews(revalidatePath);
 }

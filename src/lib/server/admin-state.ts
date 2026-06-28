@@ -3,6 +3,7 @@ import { HostLockStore } from "@/lib/admin/host-lock";
 import { RosterStore } from "@/lib/admin/roster";
 import { DrawStateStore } from "@/lib/draw/draw-state";
 import { ResultStore } from "@/lib/results/result-store";
+import { RoundStateStore } from "@/lib/round/round-state";
 import { BallotStore } from "@/lib/vote/ballot-store";
 import { VotingWindowStore } from "@/lib/vote/voting-window";
 
@@ -14,6 +15,7 @@ const globalForAdminState = globalThis as typeof globalThis & {
     ballotStore: BallotStore;
     votingWindowStore: VotingWindowStore;
     resultStore: ResultStore;
+    roundStateStore: RoundStateStore;
   };
 };
 
@@ -26,4 +28,13 @@ export const adminState =
     ballotStore: new BallotStore(),
     votingWindowStore: new VotingWindowStore(),
     resultStore: new ResultStore(),
+    roundStateStore: new RoundStateStore(),
   });
+
+export function resetTournamentOperationalState() {
+  adminState.rosterStore = new RosterStore();
+  adminState.drawStateStore = new DrawStateStore();
+  adminState.ballotStore = new BallotStore();
+  adminState.votingWindowStore = new VotingWindowStore();
+  adminState.resultStore = new ResultStore();
+}
