@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
+import { FALLBACK_CHART_IMAGE_PATH } from "./image-paths";
 import type { ImageAsset, NormalizedChart } from "./types";
 
-export const FALLBACK_CHART_IMAGE_PATH = "/chart-images/fallback-card.svg";
+export { FALLBACK_CHART_IMAGE_PATH };
 
 export function imageHash(value: string) {
   return createHash("sha256").update(value).digest("hex").slice(0, 24);
@@ -66,7 +67,10 @@ export function applyImageAssetsToCharts(
   const assetsByRemoteUrl = new Map(
     assets
       .filter((asset) => asset.remoteUrl)
-      .map((asset) => [asset.remoteUrl as string, asset.localPath]),
+      .map((asset) => [
+        asset.remoteUrl as string,
+        asset.status === "cached" ? asset.localPath : FALLBACK_CHART_IMAGE_PATH,
+      ]),
   );
 
   return charts.map((chart) => ({

@@ -2,6 +2,13 @@
 
 Use this checklist on the release branch before tournament use.
 
+## Remediation Gate
+
+- [ ] `docs/remediation-plan-2026-06-28.md` has been reviewed for the current release.
+- [ ] Every item in `docs/remediation-issue-checklist.md` is closed with evidence.
+- [ ] `docs/product-spec.md` and `docs/pump_open_stage_repo_validation_checklist.md` have been used
+      as the final behavior source of truth for release review.
+
 ## Environment
 
 - [ ] `NEXT_PUBLIC_SITE_URL` is set in Vercel.

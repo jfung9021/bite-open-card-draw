@@ -5,7 +5,11 @@ import { redirect } from "next/navigation";
 import { createHostToken } from "@/lib/admin/host-lock";
 import { generatePrivateBallotCsv } from "@/lib/results/private-csv";
 import { adminState, resetTournamentOperationalState } from "@/lib/server/admin-state";
-import { getRoundDrawRecords, getVotingRoundSnapshot, revalidateTournamentViews } from "@/lib/server/voting-round";
+import {
+  getRoundDrawRecords,
+  getVotingRoundSnapshot,
+  revalidateTournamentViews,
+} from "@/lib/server/voting-round";
 import {
   clearAdminCookies,
   clearHostTokenCookie,
@@ -138,10 +142,12 @@ export async function addInactivePlayerToCurrentRoundAction(formData: FormData) 
       reason: getString(formData, "reason"),
     });
   } catch (error) {
-    redirectWithError(error instanceof Error ? error.message : "Could not update round eligibility.");
+    redirectWithError(
+      error instanceof Error ? error.message : "Could not update round eligibility.",
+    );
   }
 
-  revalidatePath("/coolguy69");
+  revalidateTournamentViews(revalidatePath);
 }
 
 export async function drawRoundSetAction(formData: FormData) {
@@ -156,7 +162,7 @@ export async function drawRoundSetAction(formData: FormData) {
     redirectWithError(error instanceof Error ? error.message : "Could not draw round set.");
   }
 
-  revalidatePath("/coolguy69");
+  revalidateTournamentViews(revalidatePath);
 }
 
 export async function rerollOneChartAction(formData: FormData) {
@@ -174,7 +180,7 @@ export async function rerollOneChartAction(formData: FormData) {
     redirectWithError(error instanceof Error ? error.message : "Could not reroll chart.");
   }
 
-  revalidatePath("/coolguy69");
+  revalidateTournamentViews(revalidatePath);
 }
 
 export async function rerollRoundSetAction(formData: FormData) {
@@ -191,7 +197,7 @@ export async function rerollRoundSetAction(formData: FormData) {
     redirectWithError(error instanceof Error ? error.message : "Could not reroll round set.");
   }
 
-  revalidatePath("/coolguy69");
+  revalidateTournamentViews(revalidatePath);
 }
 
 export async function rerollFullRoundAction(formData: FormData) {
@@ -207,7 +213,7 @@ export async function rerollFullRoundAction(formData: FormData) {
     redirectWithError(error instanceof Error ? error.message : "Could not reroll full round.");
   }
 
-  revalidatePath("/coolguy69");
+  revalidateTournamentViews(revalidatePath);
 }
 
 export async function openVotingAction(formData: FormData) {
@@ -248,7 +254,9 @@ export async function resumeVotingAction(formData: FormData) {
   await requireActiveHost();
 
   try {
-    adminState.votingWindowStore.resumeVoting(Number(getString(formData, "roundNumber")) as 1 | 2 | 3 | 4);
+    adminState.votingWindowStore.resumeVoting(
+      Number(getString(formData, "roundNumber")) as 1 | 2 | 3 | 4,
+    );
   } catch (error) {
     redirectWithError(error instanceof Error ? error.message : "Could not resume voting.");
   }
@@ -305,7 +313,9 @@ export async function manualBallotAction(formData: FormData) {
     const replaceExisting = getString(formData, "replaceExistingBallot") === "yes";
 
     if (existing && !replaceExisting) {
-      throw new Error("This player already has a submitted ballot. Are you sure you want to replace it?");
+      throw new Error(
+        "This player already has a submitted ballot. Are you sure you want to replace it?",
+      );
     }
 
     const draws = getRoundDrawRecords(roundNumber);
@@ -388,6 +398,7 @@ export async function advanceResultRevealAction(formData: FormData) {
           name: set.selectedChart.name,
           artist: set.selectedChart.artist,
           displayDifficulty: set.selectedChart.displayDifficulty,
+          localImagePath: set.selectedChart.localImagePath,
         })),
       });
 
@@ -427,7 +438,9 @@ export async function setCurrentRoundAction(formData: FormData) {
   await requireActiveHost();
 
   try {
-    adminState.roundStateStore.setCurrentRound(Number(getString(formData, "roundNumber")) as 1 | 2 | 3 | 4);
+    adminState.roundStateStore.setCurrentRound(
+      Number(getString(formData, "roundNumber")) as 1 | 2 | 3 | 4,
+    );
   } catch (error) {
     redirectWithError(error instanceof Error ? error.message : "Could not set current round.");
   }
@@ -456,11 +469,12 @@ export async function startRehearsalModeAction(formData: FormData) {
     adminState.roundStateStore.setCurrentRound(1);
     adminState.roundStateStore.setRehearsalMode(true);
 
-    Array.from({ length: 12 }, (_, index) => `Rehearsal Player ${String(index + 1).padStart(2, "0")}`).forEach(
-      (startggUsername) => {
-        adminState.rosterStore.createOrUpdatePlayer({ startggUsername, active: true });
-      },
-    );
+    Array.from(
+      { length: 12 },
+      (_, index) => `Rehearsal Player ${String(index + 1).padStart(2, "0")}`,
+    ).forEach((startggUsername) => {
+      adminState.rosterStore.createOrUpdatePlayer({ startggUsername, active: true });
+    });
   } catch (error) {
     redirectWithError(error instanceof Error ? error.message : "Could not start rehearsal mode.");
   }
@@ -536,7 +550,9 @@ export async function seedRehearsalTiebreakAction() {
             roundSetId: draw.id,
             displayLabel: draw.displayLabel,
             noBans: false,
-            bannedChartIds: banPatterns[playerIndex]?.map((chartIndex) => draw.charts[chartIndex]?.id ?? "") ?? [],
+            bannedChartIds:
+              banPatterns[playerIndex]?.map((chartIndex) => draw.charts[chartIndex]?.id ?? "") ??
+              [],
           })),
         },
         draws,
@@ -549,7 +565,9 @@ export async function seedRehearsalTiebreakAction() {
       );
     });
   } catch (error) {
-    redirectWithError(error instanceof Error ? error.message : "Could not seed rehearsal tiebreak.");
+    redirectWithError(
+      error instanceof Error ? error.message : "Could not seed rehearsal tiebreak.",
+    );
   }
 
   revalidateTournamentViews(revalidatePath);

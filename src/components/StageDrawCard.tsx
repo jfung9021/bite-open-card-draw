@@ -1,21 +1,19 @@
 import clsx from "clsx";
-import { FALLBACK_CHART_IMAGE_PATH } from "@/lib/charts/image-cache";
+import { FALLBACK_CHART_IMAGE_PATH } from "@/lib/charts/image-paths";
 import type { DrawnChartSummary } from "@/lib/draw/draw-engine";
 
 type StageDrawCardProps = {
   chart?: DrawnChartSummary;
   index: number;
-  revealDelayMs?: number;
 };
 
-export function StageDrawCard({ chart, index, revealDelayMs = 0 }: StageDrawCardProps) {
+export function StageDrawCard({ chart, index }: StageDrawCardProps) {
   return (
     <article
       className={clsx(
         "stage-card relative min-h-44 overflow-hidden rounded-md border border-ember-300/25 bg-furnace-900 shadow-ember-tight",
-        chart && "stage-card-reveal",
+        chart && "border-ember-300/45",
       )}
-      style={{ animationDelay: `${revealDelayMs}ms` }}
     >
       <div className="absolute inset-0 bg-steel-lines" />
       {chart ? (
@@ -36,7 +34,9 @@ export function StageDrawCard({ chart, index, revealDelayMs = 0 }: StageDrawCard
           <h3 className="line-clamp-2 text-lg font-black uppercase leading-tight text-white">
             {chart?.name ?? "Awaiting Draw"}
           </h3>
-          <p className="mt-1 line-clamp-1 text-sm text-metal-300">{chart?.artist ?? "Host control pending"}</p>
+          <p className="mt-1 line-clamp-1 text-sm text-metal-300">
+            {chart?.artist ?? "Host control pending"}
+          </p>
         </div>
       </div>
     </article>

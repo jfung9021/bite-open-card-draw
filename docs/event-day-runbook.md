@@ -2,6 +2,14 @@
 
 Use this checklist on the event machine before players arrive and before every round.
 
+## Remediation Gate
+
+- Review `docs/remediation-plan-2026-06-28.md` before resuming implementation or release prep.
+- Do not treat the app as event-ready until every item in `docs/remediation-issue-checklist.md` is
+  closed with evidence and its final closure gate passes.
+- When docs disagree, follow `docs/product-spec.md` and
+  `docs/pump_open_stage_repo_validation_checklist.md` over stale execution-plan text.
+
 ## Before the Event
 
 - Run `npm run lint`, `npm run typecheck`, `npm run test`, and `npm run build` on the release branch.

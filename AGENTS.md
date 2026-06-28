@@ -7,11 +7,15 @@ This project is a tournament voting and stage-visualization app for Pump It Up O
 Read these files before making changes:
 
 1. `docs/product-spec.md`
-2. `docs/codex-execution-plan.md`
-3. `docs/phase-gates.md`
-4. `docs/security-notes.md`
+2. `docs/pump_open_stage_repo_validation_checklist.md`
+3. `docs/codex-execution-plan.md`
+4. `docs/phase-gates.md`
+5. `docs/security-notes.md`
 
-The product spec is the authority. Do not change tournament rules unless explicitly asked.
+The product spec and repo validation checklist are the source of truth for final tournament behavior.
+If they conflict with older execution-plan text, follow `docs/product-spec.md` and
+`docs/pump_open_stage_repo_validation_checklist.md`. Do not change tournament rules unless explicitly
+asked.
 
 ## Local command rule
 

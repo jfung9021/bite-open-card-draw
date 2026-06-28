@@ -1,51 +1,89 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import type { DrawRecord } from "@/lib/draw/draw-state";
+import { STAGE_CHART_REVEAL_INTERVAL_MS } from "@/lib/stage/stage-view";
 import type { RoundSetDefinition } from "@/lib/tournament";
 import { StageDrawCard } from "./StageDrawCard";
 
 type StageSetPanelProps = {
   set: RoundSetDefinition;
   draw: DrawRecord | null;
+  revealStartsAt?: string | null;
+  serverNowMs?: number;
 };
 
-export function StageSetPanel({ set, draw }: StageSetPanelProps) {
-  const cards = draw?.charts ?? Array.from({ length: set.drawCount }, () => null);
-  const firstRow = cards.slice(0, 4);
-  const secondRow = cards.slice(4, 7);
+function visibleCardCount(
+  draw: DrawRecord | null,
+  revealStartsAt: string | null | undefined,
+  nowMs: number,
+) {
+  if (!draw) {
+    return 0;
+  }
+
+  if (revealStartsAt === undefined) {
+    return draw.charts.length;
+  }
+
+  if (revealStartsAt === null) {
+    return 0;
+  }
+
+  const elapsedMs = nowMs - Date.parse(revealStartsAt);
+
+  if (elapsedMs < 0) {
+    return 0;
+  }
+
+  return Math.min(draw.charts.length, Math.floor(elapsedMs / STAGE_CHART_REVEAL_INTERVAL_MS) + 1);
+}
+
+export function StageSetPanel({ set, draw, revealStartsAt, serverNowMs }: StageSetPanelProps) {
+  const [nowMs, setNowMs] = useState(serverNowMs ?? Date.now());
+  const revealedCount = visibleCardCount(draw, revealStartsAt, nowMs);
+  const cards = Array.from({ length: set.drawCount }, (_, index) =>
+    draw && revealedCount > index ? (draw.charts[index] ?? null) : null,
+  );
+  const status = draw
+    ? revealStartsAt === null
+      ? "Drawn - waiting for prior row"
+      : revealedCount >= set.drawCount
+        ? `Version ${draw.version} / Pool ${draw.eligiblePoolCount}`
+        : `Version ${draw.version} / Revealing ${revealedCount} / ${set.drawCount}`
+    : "Awaiting host draw";
+
+  useEffect(() => {
+    if (!draw || !revealStartsAt || revealedCount >= set.drawCount) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => setNowMs(Date.now()), 250);
+
+    return () => window.clearInterval(intervalId);
+  }, [draw, revealStartsAt, revealedCount, set.drawCount]);
 
   return (
     <section className="metal-panel rounded-lg p-4">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ember-300">
-            Round {set.roundNumber} - Set {set.setOrder}
+            Set {set.setOrder} / {set.drawCount} charts
           </p>
-          <h2 className="mt-1 text-3xl font-black uppercase text-white">{set.displayLabel}</h2>
+          <h2 className="mt-1 text-3xl font-black uppercase text-white">
+            Round {set.roundNumber} - {set.displayLabel}
+          </h2>
         </div>
-        <p className="text-sm text-metal-300">
-          {draw ? `Version ${draw.version} / Pool ${draw.eligiblePoolCount}` : "Awaiting host draw"}
-        </p>
+        <p className="text-sm text-metal-300">{status}</p>
       </div>
-      <div className="grid gap-3">
-        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-          {firstRow.map((chart, index) => (
-            <StageDrawCard
-              key={chart?.id ?? `placeholder-top-${index}`}
-              chart={chart ?? undefined}
-              index={index + 1}
-              revealDelayMs={index * 130}
-            />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:px-[12.5%]">
-          {secondRow.map((chart, index) => (
-            <StageDrawCard
-              key={chart?.id ?? `placeholder-bottom-${index}`}
-              chart={chart ?? undefined}
-              index={index + 5}
-              revealDelayMs={(index + 4) * 130}
-            />
-          ))}
-        </div>
+      <div className="grid grid-cols-7 gap-3">
+        {cards.map((chart, index) => (
+          <StageDrawCard
+            key={`stage-${set.roundNumber}-${set.setOrder}-${index}`}
+            chart={chart ?? undefined}
+            index={index + 1}
+          />
+        ))}
       </div>
     </section>
   );

@@ -4,6 +4,7 @@ import { ROUND_SET_DEFINITIONS, type RoundSetDefinition } from "@/lib/tournament
 export type StageSetView = {
   set: RoundSetDefinition;
   draw: DrawRecord | null;
+  revealStartsAt: string | null;
 };
 
 export type StageRoundView = {
@@ -12,14 +13,52 @@ export type StageRoundView = {
   bothSetsDrawn: boolean;
 };
 
+export const STAGE_CHART_REVEAL_INTERVAL_MS = 1800;
+export const STAGE_SET_REVEAL_GAP_MS = 900;
+
 export function buildStageRoundView(
   drawStateStore: Pick<DrawStateStore, "getActiveDraw">,
   roundNumber: 1 | 2 | 3 | 4,
 ): StageRoundView {
-  const sets = ROUND_SET_DEFINITIONS.filter((set) => set.roundNumber === roundNumber).map((set) => ({
+  const setsWithoutReveal = ROUND_SET_DEFINITIONS.filter(
+    (set) => set.roundNumber === roundNumber,
+  ).map((set) => ({
     set,
     draw: drawStateStore.getActiveDraw(set.roundNumber, set.setOrder),
   }));
+  let nextRevealStartMs: number | null = null;
+  let blockedByMissingPriorSet = false;
+  const sets = setsWithoutReveal.map((setView) => {
+    if (!setView.draw) {
+      blockedByMissingPriorSet = true;
+
+      return {
+        ...setView,
+        revealStartsAt: null,
+      };
+    }
+
+    if (blockedByMissingPriorSet) {
+      return {
+        ...setView,
+        revealStartsAt: null,
+      };
+    }
+
+    const drawCreatedAtMs = Date.parse(setView.draw.createdAt);
+    const revealStartMs =
+      nextRevealStartMs === null ? drawCreatedAtMs : Math.max(drawCreatedAtMs, nextRevealStartMs);
+
+    nextRevealStartMs =
+      revealStartMs +
+      setView.draw.charts.length * STAGE_CHART_REVEAL_INTERVAL_MS +
+      STAGE_SET_REVEAL_GAP_MS;
+
+    return {
+      ...setView,
+      revealStartsAt: new Date(revealStartMs).toISOString(),
+    };
+  });
 
   return {
     roundNumber,

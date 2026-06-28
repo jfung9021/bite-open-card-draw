@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { FALLBACK_CHART_IMAGE_PATH } from "@/lib/charts/image-cache";
+import { FALLBACK_CHART_IMAGE_PATH } from "@/lib/charts/image-paths";
 import type { ResultSetSnapshot } from "@/lib/results/result-engine";
 import { RuneWheel } from "./RuneWheel";
 
@@ -28,14 +28,17 @@ export function ResultSetPanel({ set, showWinner = false }: ResultSetPanelProps)
       </div>
       <div className="mt-4 grid gap-3">
         {set.rows.map((row, index) => {
-          const barWidth = set.maxBanCount > 0 ? `${(row.banCount / set.maxBanCount) * 100}%` : "0%";
+          const barWidth =
+            set.maxBanCount > 0 ? `${(row.banCount / set.maxBanCount) * 100}%` : "0%";
 
           return (
             <article
               key={row.chart.id}
               className={clsx(
                 "grid gap-3 rounded border bg-black/25 p-3 md:grid-cols-[96px_1fr_auto]",
-                showWinner && row.selected ? "border-ember-300 shadow-ember-tight" : "border-metal-700",
+                showWinner && row.selected
+                  ? "border-ember-300 shadow-ember-tight"
+                  : "border-metal-700",
               )}
             >
               <div className="relative h-24 overflow-hidden rounded border border-ember-300/15 bg-furnace-900">
@@ -65,7 +68,9 @@ export function ResultSetPanel({ set, showWinner = false }: ResultSetPanelProps)
                   {banLabel(row.banCount)}
                 </p>
                 {showWinner && row.selected ? (
-                  <p className="mt-2 text-xs font-black uppercase tracking-[0.16em] text-ember-300">Selected</p>
+                  <p className="mt-2 text-xs font-black uppercase tracking-[0.16em] text-ember-300">
+                    Selected
+                  </p>
                 ) : null}
               </div>
             </article>
@@ -83,12 +88,16 @@ export function ResultSetPanel({ set, showWinner = false }: ResultSetPanelProps)
                   Fallback tiebreak reveal
                 </p>
                 <p className="mt-2 text-lg font-black text-white">{set.selectedChart.name}</p>
-                <p className="mt-1 text-sm text-metal-300">5 or more charts tied for fewest bans.</p>
+                <p className="mt-1 text-sm text-metal-300">
+                  5 or more charts tied for fewest bans.
+                </p>
               </div>
             )
           ) : (
             <div className="rounded border border-ember-300/35 bg-black/25 p-3">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-ember-300">Unique least-ban chart</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-ember-300">
+                Unique least-ban chart
+              </p>
               <p className="mt-2 text-lg font-black text-white">{set.selectedChart.name}</p>
             </div>
           )}
