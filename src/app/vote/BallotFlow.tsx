@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { FALLBACK_CHART_IMAGE_PATH } from "@/lib/charts/image-paths";
 import type { DrawRecord } from "@/lib/draw/draw-state";
 import type { BallotSetChoice } from "@/lib/vote/ballot";
 import type { EligiblePlayerSnapshot } from "@/lib/vote/voting-window";
@@ -97,7 +98,11 @@ export function BallotFlow({
         setSavedAt(ballot.submittedAt);
         setMessage(`Saved revision ${ballot.revision}.`);
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "Save failed. Previous server ballot remains valid.");
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : "Save failed. Previous server ballot remains valid.",
+        );
       }
     });
   }
@@ -105,7 +110,9 @@ export function BallotFlow({
   if (draws.length !== 2) {
     return (
       <section className="metal-panel rounded-lg p-5">
-        <p className="text-lg font-bold text-metal-300">Both chart sets must be drawn before voting opens.</p>
+        <p className="text-lg font-bold text-metal-300">
+          Both chart sets must be drawn before voting opens.
+        </p>
       </section>
     );
   }
@@ -115,12 +122,17 @@ export function BallotFlow({
       <section className="metal-panel rounded-lg p-5">
         <div className="mb-5 grid gap-2 rounded border border-metal-700 bg-black/25 p-3 sm:grid-cols-[1fr_auto]">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-ember-300">{statusLabel}</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-ember-300">
+              {statusLabel}
+            </p>
             <p className="mt-1 text-sm text-metal-300">{turnoutText}</p>
           </div>
           <p className="font-mono text-3xl font-black tabular-nums text-white">{timerText}</p>
         </div>
-        <label className="text-sm font-bold uppercase tracking-[0.16em] text-ember-300" htmlFor="startgg-username">
+        <label
+          className="text-sm font-bold uppercase tracking-[0.16em] text-ember-300"
+          htmlFor="startgg-username"
+        >
           Select your start.gg username
         </label>
         <select
@@ -147,7 +159,11 @@ export function BallotFlow({
             Are you sure you are voting as {selectedPlayer.startggUsername}?
           </p>
         ) : null}
-        {warning ? <p className="mt-3 rounded border border-metal-700 bg-black/25 p-3 text-sm text-metal-300">{warning}</p> : null}
+        {warning ? (
+          <p className="mt-3 rounded border border-metal-700 bg-black/25 p-3 text-sm text-metal-300">
+            {warning}
+          </p>
+        ) : null}
         <button
           className="button-metal mt-5 w-full rounded px-4 py-3 font-black uppercase disabled:opacity-40"
           disabled={!selectedPlayer}
@@ -163,11 +179,18 @@ export function BallotFlow({
   if (savedAt) {
     return (
       <section className="metal-panel rounded-lg p-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ember-300">Ballot Saved</p>
-        <h1 className="mt-2 text-3xl font-black uppercase text-white">{selectedPlayer?.startggUsername}</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ember-300">
+          Ballot Saved
+        </p>
+        <h1 className="mt-2 text-3xl font-black uppercase text-white">
+          {selectedPlayer?.startggUsername}
+        </h1>
         <p className="mt-3 text-metal-300">Server-confirmed timestamp: {savedAt}</p>
         {message ? <p className="mt-3 text-sm text-ember-300">{message}</p> : null}
-        <button className="button-metal mt-5 rounded px-4 py-3 font-black uppercase" onClick={() => setSavedAt(null)}>
+        <button
+          className="button-metal mt-5 rounded px-4 py-3 font-black uppercase"
+          onClick={() => setSavedAt(null)}
+        >
           Change vote
         </button>
       </section>
@@ -177,21 +200,33 @@ export function BallotFlow({
   if (step >= draws.length) {
     return (
       <section className="metal-panel rounded-lg p-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ember-300">Review and Submit</p>
-        <h1 className="mt-2 text-3xl font-black uppercase text-white">Round {roundNumber} Ballot</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ember-300">
+          Review and Submit
+        </p>
+        <h1 className="mt-2 text-3xl font-black uppercase text-white">
+          Round {roundNumber} Ballot
+        </h1>
         <div className="mt-5 grid gap-3">
           {choices.map((choice) => (
-            <div key={choice.roundSetId} className="rounded border border-metal-700 bg-black/25 p-3">
+            <div
+              key={choice.roundSetId}
+              className="rounded border border-metal-700 bg-black/25 p-3"
+            >
               <p className="font-bold text-white">{choice.displayLabel}</p>
               <p className="mt-1 text-sm text-metal-300">
-                {choice.noBans ? "No bans for this set" : `${choice.bannedChartIds.length} ban selection(s)`}
+                {choice.noBans
+                  ? "No bans for this set"
+                  : `${choice.bannedChartIds.length} ban selection(s)`}
               </p>
             </div>
           ))}
         </div>
         {message ? <p className="mt-3 text-sm text-ember-300">{message}</p> : null}
         <div className="mt-5 flex flex-wrap gap-3">
-          <button className="rounded border border-metal-700 px-4 py-3 font-bold uppercase text-metal-300" onClick={() => setStep(1)}>
+          <button
+            className="rounded border border-metal-700 px-4 py-3 font-bold uppercase text-metal-300"
+            onClick={() => setStep(1)}
+          >
             Back
           </button>
           <button
@@ -218,17 +253,24 @@ export function BallotFlow({
           return (
             <button
               key={chart.id}
-              className={`min-h-28 rounded border p-3 text-left ${
+              className={`relative min-h-32 overflow-hidden rounded border bg-cover bg-center p-3 text-left ${
                 selected ? "border-ember-300 bg-ember-900/40" : "border-metal-700 bg-black/25"
               } ${index === 6 ? "col-span-2 mx-auto w-1/2 min-w-40" : ""}`}
+              style={{
+                backgroundImage: `linear-gradient(180deg, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0.86)), url(${
+                  chart.localImagePath ?? FALLBACK_CHART_IMAGE_PATH
+                })`,
+              }}
               onClick={() => toggleBan(chart.id)}
               type="button"
             >
-              <span className="text-xs font-bold uppercase tracking-[0.16em] text-ember-300">
+              <span className="relative text-xs font-bold uppercase tracking-[0.16em] text-ember-300">
                 {chart.displayDifficulty}
               </span>
-              <span className="mt-2 block font-black uppercase text-white">{chart.name}</span>
-              <span className="mt-1 block text-sm text-metal-300">{chart.artist}</span>
+              <span className="relative mt-2 block font-black uppercase text-white">
+                {chart.name}
+              </span>
+              <span className="relative mt-1 block text-sm text-metal-300">{chart.artist}</span>
             </button>
           );
         })}
@@ -259,7 +301,13 @@ export function BallotFlow({
         </button>
         <button
           className="button-metal rounded px-4 py-3 font-black uppercase disabled:opacity-40"
-          disabled={!currentChoice || !((currentChoice.noBans && currentChoice.bannedChartIds.length === 0) || (!currentChoice.noBans && currentChoice.bannedChartIds.length >= 1))}
+          disabled={
+            !currentChoice ||
+            !(
+              (currentChoice.noBans && currentChoice.bannedChartIds.length === 0) ||
+              (!currentChoice.noBans && currentChoice.bannedChartIds.length >= 1)
+            )
+          }
           onClick={() => setStep((current) => current + 1)}
           type="button"
         >

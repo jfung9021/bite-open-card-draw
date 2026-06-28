@@ -1,5 +1,147 @@
 # Phase Status
 
+## Current Remediation Status
+
+Status: remediation in progress; not event-ready.
+
+The app is not event-ready until every item in `docs/remediation-issue-checklist.md` is closed
+with evidence and the final closure gate in that checklist passes. The authoritative behavior
+sources during remediation are `docs/product-spec.md` and
+`docs/pump_open_stage_repo_validation_checklist.md`; they override stale execution-plan or phase
+status text when there is a conflict.
+
+`docs/pump_open_stage_repo_validation_checklist.md` is present in the workspace and is intentionally
+called out as a required-read project document. As of this Phase 0 remediation note, `rtk git status
+--short` reports it as untracked alongside the remediation plan and issue checklist, so these docs
+must be added to version control before release if they are not already tracked by the user's
+branch workflow.
+
+## Remediation Phase 0 - Align Instructions And Docs
+
+Status: complete
+
+### Acceptance Criteria
+
+- Required-read docs: `AGENTS.md` now includes `docs/pump_open_stage_repo_validation_checklist.md`.
+- Source-of-truth order: project instructions now state that the product spec and validation checklist
+  override stale execution-plan text when they conflict.
+- Stage layout docs: stale projector-preview layout guidance was replaced with the required two
+  horizontal 7-card rows, Set 1 on top and Set 2 on bottom.
+- Event readiness: this file now states the app is not event-ready until the remediation issue
+  checklist is closed with evidence.
+- Remediation links: event-day and release docs link the remediation plan and issue checklist.
+- Gate repair: fixed the ambiguous Playwright `getByText("final")` selector exposed during
+  verification by scoping the check to the result reveal controls.
+
+### Changed Files
+
+- `AGENTS.md`
+- `docs/codex-execution-plan.md`
+- `docs/testing-checklist.md`
+- `docs/phase-status.md`
+- `docs/event-day-runbook.md`
+- `docs/release-checklist.md`
+- `docs/remediation-issue-checklist.md`
+- `tests/e2e/full-flow.spec.ts`
+
+### Checks Run
+
+- `rtk rg -n "4\\+3|4 cards on top|3 cards on bottom|compact 4\\+3|compact set panel" docs AGENTS.md`
+- `rtk rg -n "not event-ready|remediation in progress|remediation-plan-2026-06-28|remediation-issue-checklist|pump_open_stage_repo_validation_checklist|source of truth" AGENTS.md docs/phase-status.md docs/event-day-runbook.md docs/release-checklist.md`
+- `rtk npm run lint`
+- `rtk npm run typecheck`
+- `rtk npm run test`
+- `rtk npm run build`
+- `rtk npm run test:e2e`
+
+### Manual Review
+
+- Product rules: no tournament behavior was changed; this phase only aligned documentation with the
+  product spec and validation checklist.
+- Security: no secrets or implementation files were changed.
+- Stage layout: docs now preserve the phone two-column layout as separate from the projector two-row
+  layout.
+- Tests: the e2e selector repair is test-only and targets the admin reveal-phase status instead of
+  arbitrary chart text.
+
+### Risks And Assumptions
+
+- The remediation plan, remediation issue checklist, and validation checklist are currently untracked
+  according to local Git status. This note documents that status; commit/staging is left to the user
+  unless explicitly requested.
+- Later remediation phases still need implementation work before event use.
+
+## Remediation Phase 1 - Visible Stage And Image Fixes
+
+Status: complete for the Phase 1 code paths; not event-ready because real cached artwork population
+remains open in `docs/remediation-issue-checklist.md`.
+
+### Acceptance Criteria
+
+- Stage auto-refresh: `/stage` now includes `StageAutoRefresh`, which polls with `router.refresh()`
+  every 2000ms.
+- Public revalidation: admin draw and reroll actions now call `revalidateTournamentViews`, matching
+  existing voting/reveal/reset revalidation behavior.
+- Stage reveal sequence: projector rows reveal from committed draw `createdAt` timestamps at 1800ms
+  per card, with Set 2 scheduled after all 7 Set 1 cards plus the reveal gap.
+- Stage layout: projector preview is two labeled horizontal 7-card rows, Set 1 on top and Set 2 below.
+- Phone layout: phone voting remains its separate two-column card grid with the 7th card centered.
+- Runtime images: draw state now prefers `data/generated/charts-with-images.json` and verifies cached
+  local public files before preserving non-fallback `localImagePath`.
+- Fallback behavior: fallback art is used for missing, failed, or absent cached images.
+- Real image cache attempt: `rtk npm run cache:chart-images` completed with 0 cached real images and
+  639 fallback assets; `public/chart-images/cache` contained 0 files.
+
+### Changed Files
+
+- Stage/public UI: `src/app/stage/page.tsx`, `src/app/stage/StageAutoRefresh.tsx`,
+  `src/components/StageSetPanel.tsx`, `src/components/StageDrawCard.tsx`,
+  `src/components/ResultSetPanel.tsx`, `src/app/globals.css`
+- Admin/public state: `src/app/coolguy69/actions.ts`, `src/lib/stage/stage-view.ts`,
+  `src/lib/stage/stage-view.test.ts`
+- Image/runtime data: `src/lib/charts/image-paths.ts`, `src/lib/charts/runtime-catalog.ts`,
+  `src/lib/charts/runtime-catalog.test.ts`, `src/lib/charts/image-cache.ts`,
+  `src/lib/charts/image-cache.test.ts`, `src/lib/draw/draw-state.ts`
+- Phone/result image use: `src/app/vote/BallotFlow.tsx`, `src/app/vote/page.tsx`,
+  `src/lib/vote/ballot.ts`
+- E2E coverage: `tests/e2e/full-flow.spec.ts`
+- Documentation: `docs/phase-status.md`, `docs/remediation-issue-checklist.md`
+
+### Checks Run
+
+- `rtk npm run lint` - passed
+- `rtk npm run typecheck` - passed
+- `rtk npm run test` - passed, 20 files / 54 tests
+- `rtk npm run build` - passed
+- `rtk npm run test:e2e` - passed, 1 Playwright test
+- `rtk npm run cache:chart-images` - completed, but cached 0 real images and generated fallback
+  metadata for all 639 image assets
+- `rtk proxy powershell -NoProfile -Command "Get-ChildItem -Recurse -File -LiteralPath 'public\chart-images\cache' -ErrorAction SilentlyContinue | Measure-Object | Select-Object -ExpandProperty Count"` - returned 0
+
+### Manual Review
+
+- Product rules: no tournament rules changed; round/set definitions, one voting window, ban rules,
+  and server-side draw/reroll/result authority remain intact.
+- Stage UI: projector rows are no longer 4+3 panels; reveal order is Set 1 cards 1-7, then Set 2
+  cards 1-7; final reveal still shows exactly the two selected charts.
+- Phone UI: the voter layout remains separate from projector layout and still uses two columns with
+  the 7th card centered.
+- Security: public refresh is read-only client polling; tournament-changing actions remain server
+  actions behind admin session and host control.
+- Tests: e2e now keeps a second `/stage` tab open and verifies draw, reroll, voting-open, and final
+  reveal updates without manual stage navigation.
+
+### Risks And Assumptions
+
+- Real cached image files were not produced in this environment because all upstream image fetches
+  failed. `RIC-020`, `RIC-021`, `RIC-022`, and `RIC-028` remain open.
+- `data/generated/*.json` and `public/chart-images/cache/` remain ignored/reproducible. Deployment
+  still needs an event setup step or build workflow that provides generated metadata and real cached
+  assets.
+- The stage polling interval is 2000ms, so projector updates are intentionally lightweight rather
+  than instant.
+- Operational state is still in-memory until the later Supabase persistence remediation phase.
+
 ## Phase 1 - Project Scaffold, Docs, And Route Skeleton
 
 Status: complete
@@ -261,7 +403,7 @@ Status: complete
 - Product rules: stage still shows the two fixed sets for the current round and does not decide draw results in browser code.
 - Security: stage route reads server state only; it does not expose admin secrets, password hashes, service-role keys, or mutation controls.
 - Data: stage refresh reflects the in-memory active draw records created by admin draw controls in the same server process.
-- UI: stage uses uploaded logo through `RoundHeader`, a readable timer/QR sidebar, original industrial/rune styling, animated chart cards, and 4+3 card layout on wide screens.
+- UI: stage uses uploaded logo through `RoundHeader`, a readable timer/QR sidebar, original industrial/rune styling, and animated chart cards. The original projector card layout noted in this historical phase is superseded by the remediation requirement for two horizontal 7-card rows.
 - Tests: unit coverage verifies stage readiness depends on both set draws.
 
 ### Risks And Assumptions

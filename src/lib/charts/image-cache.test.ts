@@ -54,4 +54,47 @@ describe("chart image cache planning", () => {
     expect(assets[0]?.status).toBe("fallback");
     expect(charts[0]?.localImagePath).toBe(FALLBACK_CHART_IMAGE_PATH);
   });
+
+  it("uses cached art only for successfully cached image assets", () => {
+    const chart = normalizeChartRow(
+      {
+        name: "Cached",
+        name_kr: "Cached",
+        artist: "Artist",
+        label: "s",
+        type: "s",
+        level: "16",
+        bg_img: "https://example.com/cached.png",
+      },
+      2,
+    );
+
+    expect(
+      applyImageAssetsToCharts(
+        [chart],
+        [
+          {
+            remoteUrl: chart.sourceBgImg,
+            localPath: "/chart-images/cache/cached.png",
+            status: "cached",
+            chartIds: [chart.id],
+          },
+        ],
+      )[0]?.localImagePath,
+    ).toBe("/chart-images/cache/cached.png");
+
+    expect(
+      applyImageAssetsToCharts(
+        [chart],
+        [
+          {
+            remoteUrl: chart.sourceBgImg,
+            localPath: "/chart-images/cache/not-ready.png",
+            status: "pending",
+            chartIds: [chart.id],
+          },
+        ],
+      )[0]?.localImagePath,
+    ).toBe(FALLBACK_CHART_IMAGE_PATH);
+  });
 });

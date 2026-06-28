@@ -35,6 +35,7 @@ export type PhoneRoundStatus =
         name: string;
         artist: string;
         displayDifficulty: string;
+        localImagePath?: string | null;
       }>;
     };
 
@@ -70,7 +71,10 @@ export function validateRoundBallot(input: SubmitRoundBallotInput, draws: readon
     throw new Error("Both chart sets must be completed before submitting.");
   }
 
-  if (choiceIds.size !== drawIds.size || [...choiceIds].some((choiceId) => !drawIds.has(choiceId))) {
+  if (
+    choiceIds.size !== drawIds.size ||
+    [...choiceIds].some((choiceId) => !drawIds.has(choiceId))
+  ) {
     throw new Error("Ballot must include exactly one completed choice for each drawn chart set.");
   }
 
@@ -96,7 +100,8 @@ export function validateRoundBallot(input: SubmitRoundBallotInput, draws: readon
 export function countBanSelections(ballots: readonly RoundBallot[]) {
   return ballots.reduce(
     (total, ballot) =>
-      total + ballot.choices.reduce((choiceTotal, choice) => choiceTotal + choice.bannedChartIds.length, 0),
+      total +
+      ballot.choices.reduce((choiceTotal, choice) => choiceTotal + choice.bannedChartIds.length, 0),
     0,
   );
 }

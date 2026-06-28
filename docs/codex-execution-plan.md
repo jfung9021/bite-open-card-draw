@@ -1025,24 +1025,20 @@ The stage display should show:
 - QR code to `/room`
 - both drawn chart sets once available
 
-During individual set reveal, use:
-
-```text
-4 cards on top
-3 cards on bottom
-```
+During individual set reveal, fill the projector preview rows one chart at a time:
+first all 7 charts from Set 1 in the top row, then all 7 charts from Set 2 in the
+bottom row.
 
 Once both sets are visible, show two labeled panels:
 
 ```text
-Round 1 — S16
-[7 drawn charts]
+Round 1 — S16: [1] [2] [3] [4] [5] [6] [7]
 
-Round 1 — S17
-[7 drawn charts]
+Round 1 — S17: [1] [2] [3] [4] [5] [6] [7]
 ```
 
-Within each panel, use a compact 4+3 arrangement when space allows. If the screen becomes crowded, scale cards down rather than merging the two sets.
+The stage preview and voting display must use two horizontal rows of 7 charts.
+Keep this projector layout separate from the phone ballot layout.
 
 ## QR placement
 

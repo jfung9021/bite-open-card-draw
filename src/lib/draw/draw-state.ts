@@ -1,7 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
-import { importChartRows, parseChartCsv } from "@/lib/charts/importer";
+import { loadRuntimeCharts } from "@/lib/charts/runtime-catalog";
 import type { NormalizedChart } from "@/lib/charts/types";
 import { ROUND_SET_DEFINITIONS } from "@/lib/tournament";
 import {
@@ -31,18 +29,6 @@ function drawKey(roundNumber: 1 | 2 | 3 | 4, setOrder: 1 | 2) {
   return `${roundNumber}:${setOrder}`;
 }
 
-function loadChartsFromSource() {
-  const sourcePath = path.join(process.cwd(), "data/source/charts.csv");
-
-  if (!existsSync(sourcePath)) {
-    throw new Error("Missing data/source/charts.csv.");
-  }
-
-  return importChartRows(parseChartCsv(readFileSync(sourcePath, "utf8")), {
-    sourcePath: "data/source/charts.csv",
-  }).charts;
-}
-
 export class DrawStateStore {
   private charts: NormalizedChart[] | null = null;
   private drawHistory = new Map<string, DrawRecord[]>();
@@ -52,7 +38,7 @@ export class DrawStateStore {
   constructor(private readonly randomIndex: RandomIndex = secureRandomIndex) {}
 
   getCharts() {
-    this.charts ??= loadChartsFromSource();
+    this.charts ??= loadRuntimeCharts();
     return this.charts;
   }
 
@@ -95,7 +81,9 @@ export class DrawStateStore {
     const existing = this.getActiveDraw(input.roundNumber, input.setOrder);
 
     if (existing && !input.allowRedraw) {
-      throw new Error(`${existing.displayLabel} is already drawn. Use a reroll action to replace it.`);
+      throw new Error(
+        `${existing.displayLabel} is already drawn. Use a reroll action to replace it.`,
+      );
     }
 
     return this.createDrawRecord({
@@ -105,18 +93,11 @@ export class DrawStateStore {
     });
   }
 
-  rerollRoundSet(input: {
-    roundNumber: 1 | 2 | 3 | 4;
-    setOrder: 1 | 2;
-    reason: string;
-  }) {
+  rerollRoundSet(input: { roundNumber: 1 | 2 | 3 | 4; setOrder: 1 | 2; reason: string }) {
     return this.createDrawRecord(input);
   }
 
-  rerollFullRound(input: {
-    roundNumber: 1 | 2 | 3 | 4;
-    reason: string;
-  }) {
+  rerollFullRound(input: { roundNumber: 1 | 2 | 3 | 4; reason: string }) {
     const first = this.createDrawRecord({
       roundNumber: input.roundNumber,
       setOrder: 1,
@@ -171,7 +152,9 @@ export class DrawStateStore {
       throw new Error(`No eligible replacement chart exists for ${set.displayLabel}.`);
     }
 
-    const replacement = toDrawnChartSummary(eligible[this.randomIndex(eligible.length)] as NormalizedChart);
+    const replacement = toDrawnChartSummary(
+      eligible[this.randomIndex(eligible.length)] as NormalizedChart,
+    );
     const charts = [...current.charts];
     charts[targetIndex] = replacement;
 
@@ -214,7 +197,9 @@ export class DrawStateStore {
             set,
             excludedChartKeys: this.excludedChartKeys,
             selectedSongKeys: this.selectedSongKeys,
-            sameRoundBlockedSongKeys: new Set(otherSetDraw?.charts.map((chart) => chart.songKey) ?? []),
+            sameRoundBlockedSongKeys: new Set(
+              otherSetDraw?.charts.map((chart) => chart.songKey) ?? [],
+            ),
           },
           this.randomIndex,
         );

@@ -79,7 +79,7 @@ This checklist is a Phase 1 baseline. It should be expanded as automated tests a
 
 - `/stage` displays drawn charts and final selected charts.
 - `/stage` shows both drawn sets together after both sets are available.
-- Stage set layout uses 4 cards on the top row and 3 cards on the bottom row on wide displays.
+- Stage preview uses exactly two horizontal 7-card rows: Set 1 on top and Set 2 on bottom.
 - Stage QR panel points to `/room`.
 - Missing chart art falls back to `public/chart-images/fallback-card.svg`.
 - Phones show `Voting is closed. Results are being revealed on stage.` before reveal completion.
