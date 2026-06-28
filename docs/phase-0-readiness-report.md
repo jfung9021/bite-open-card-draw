@@ -16,6 +16,7 @@
 | `docs/data-audit.md` | PASS | Data audit exists. |
 | `docs/asset-audit.md` | PASS | Asset audit exists. |
 | `docs/phase-0-manual-review.md` | PASS | Manual Phase 0 review exists. |
+| `docs/phase-0-cloud-projects.md` | PASS | Optional 0.21 cloud project prep status exists. |
 | `.env.example` | PASS | Placeholder environment file exists. |
 | `.gitignore` | PASS | Ignores env files, build outputs, dependencies, logs, editor files, and local runtime folders. |
 | `data/source/charts.csv` | PASS | Copied from `C:\Users\jfung\Downloads\charts (1).csv`; hash verified after copy. |
@@ -62,6 +63,14 @@
 | Vercel CLI | PASS | `54.14.2`. |
 | Supabase CLI | WARNING | Not installed locally; needed for local Supabase work in later phases unless a remote-only workflow is chosen. |
 
+## Optional Cloud Project Prep
+
+| Item | Status | Notes |
+|---|---|---|
+| Vercel project shell | PASS | Created `jonathansminigameparty/bite-open-card-draw`. |
+| Supabase account access | PASS | `npx supabase projects list` can access the account. |
+| Supabase project shell | MANUAL | Project creation requires a private database password and region decision. |
+
 ## Phase 0 Checks Run
 
 - `rtk git status --short --branch`
@@ -86,7 +95,7 @@
 
 - The source tournament logo is large. Create optimized renditions during Phase 1 or Phase 3.
 - The CSV has a small number of malformed-looking rows documented in `docs/data-audit.md`; Phase 3 ingestion should handle them explicitly.
-- Supabase CLI is not installed locally.
+- Supabase CLI is not installed globally, but it works through `npx supabase`.
 - App commands do not exist yet because Phase 1 has not scaffolded the app.
 
 ## Recommended Next Action
