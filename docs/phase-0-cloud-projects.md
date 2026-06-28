@@ -80,6 +80,14 @@ Database password
 
 Do not add real values to Git. Add them to `.env.local` only after Phase 1 scaffolds the app, or set them in Vercel project settings when deployment work begins.
 
+Local helper:
+
+```bash
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File scripts/write-local-env.ps1
+```
+
+This helper writes `.env.local`, which is ignored by Git. It does not commit or print server-only values.
+
 ## Manual Phase 0 Work Remaining
 
 - Save the Supabase database password in a private password manager.
