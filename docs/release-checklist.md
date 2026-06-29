@@ -6,6 +6,7 @@ Use this checklist on the release branch before tournament use.
 
 - [ ] `docs/remediation-plan-2026-06-28.md` has been reviewed for the current release.
 - [ ] Every item in `docs/remediation-issue-checklist.md` is closed with evidence.
+- [ ] The final closure gate in `docs/remediation-issue-checklist.md` passes.
 - [ ] `docs/product-spec.md` and `docs/pump_open_stage_repo_validation_checklist.md` have been used
       as the final behavior source of truth for release review.
 
@@ -28,6 +29,7 @@ Use this checklist on the release branch before tournament use.
 - [ ] `rtk npm run cache:chart-images` completed with at least 1 real cached image asset.
 - [ ] `public/chart-images/cache` contains real cached image files, or fallback artwork was explicitly accepted as a release risk.
 - [ ] Tournament logo renders from `public/brand/tournament-logo.png`.
+- [ ] Real cached artwork rendering was verified on `/stage`, `/vote`, `/charts`, and `/results`.
 
 ## Roster
 
@@ -49,7 +51,7 @@ Use this checklist on the release branch before tournament use.
 - [ ] `/stage` readability was checked on projector/stream capture.
 - [ ] `/room` QR destination opens on phones.
 - [ ] `/vote` mobile ballot flow was tested.
-- [ ] `/charts` view-only mode was tested.
+- [ ] `/charts` view-only mode was tested and auto-refreshes after draw and final reveal.
 - [ ] `/results` post-reveal mode was tested.
 - [ ] Timer readability was checked.
 - [ ] Selected chart highlight was checked.
@@ -59,6 +61,7 @@ Use this checklist on the release branch before tournament use.
 
 - [ ] Result reveal sequence was tested.
 - [ ] Rune-wheel tiebreak reveal was tested in rehearsal.
+- [ ] Full four-round rehearsal completed against persistent state.
 - [ ] Private CSV auto-download was tested.
 - [ ] Manual `Download private ballot CSV` was tested.
 - [ ] CSV file location was confirmed.
@@ -72,5 +75,6 @@ Use this checklist on the release branch before tournament use.
 - [ ] `rtk npm run import:charts`
 - [ ] `rtk npm run cache:chart-images -- --fallback-only`
 - [ ] `rtk npm audit --omit=dev`
+- [ ] `rtk git diff --check`
 - [ ] `rtk npm run build`
 - [ ] Final release commit recorded: `git rev-parse HEAD`

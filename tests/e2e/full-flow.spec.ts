@@ -128,9 +128,16 @@ test("full round smoke flow reaches final reveal and downloads private CSV", asy
   await goto(stagePage, "/stage");
   await expect(stagePage.locator("header").getByText("Awaiting host draw")).toBeVisible();
 
+  const chartsPage = await page.context().newPage();
+  await goto(chartsPage, "/charts");
+  await expect(chartsPage.getByText("Awaiting host draw").first()).toBeVisible();
+
   await page.getByRole("button", { name: "Draw Set" }).nth(0).click();
   await expect(page.getByText(/Version 1/).first()).toBeVisible();
   await expect(stagePage.getByText(/Version 1 \/ (Revealing|Pool)/)).toBeVisible({ timeout: 7000 });
+  await expect(chartsPage.getByText(/Version 1 \/ (Revealing|Pool)/)).toBeVisible({
+    timeout: 7000,
+  });
 
   const firstChartRerollForm = page
     .locator("form")
@@ -143,6 +150,9 @@ test("full round smoke flow reaches final reveal and downloads private CSV", asy
   });
   await expect(page.getByText(/Version 2/).first()).toBeVisible();
   await expect(stagePage.getByText(/Version 2 \/ (Revealing|Pool)/)).toBeVisible({ timeout: 7000 });
+  await expect(chartsPage.getByText(/Version 2 \/ (Revealing|Pool)/)).toBeVisible({
+    timeout: 7000,
+  });
 
   await page.getByRole("button", { name: "Draw Set" }).nth(1).click();
   await expect(page.getByText("ready to vote")).toBeVisible();
@@ -151,12 +161,8 @@ test("full round smoke flow reaches final reveal and downloads private CSV", asy
   });
   await expectStageRows(stagePage);
   await expectRenderedStageImage(stagePage);
-
-  const chartsPage = await page.context().newPage();
-  await goto(chartsPage, "/charts");
   await expectStageRows(chartsPage);
   await expectRenderedStageImage(chartsPage);
-  await chartsPage.close();
 
   await page.getByRole("button", { name: "Open Voting", exact: true }).click();
   await expect(page.getByText("voting open")).toBeVisible();
@@ -220,6 +226,11 @@ test("full round smoke flow reaches final reveal and downloads private CSV", asy
   await expect(stagePage.getByRole("heading", { name: "ROUND 1 FINAL CHARTS" })).toBeVisible({
     timeout: 7000,
   });
+  await expect(chartsPage.getByRole("heading", { name: "ROUND 1 FINAL CHARTS" })).toBeVisible({
+    timeout: 7000,
+  });
+  await expectRenderedStageImage(chartsPage);
+  await chartsPage.close();
   await expect(phonePage.getByText("Full ban counts")).toBeVisible({ timeout: 7000 });
   await expectRenderedBackgroundImage(phonePage.getByTestId("phone-final-chart-card").first());
 

@@ -133,7 +133,7 @@ Do not mark an item complete unless the fix is implemented, verified by an appro
 | [x]  | RIC-091 | QR encodes the general `/room` URL, not `/vote` or a player-specific link.                       | Phase 2: `QRPanel` builds the target with `buildPublicRouteUrl("/room")`; e2e verifies `data-qr-target="http://127.0.0.1:3100/room"`. |
 | [x]  | RIC-092 | QR uses `NEXT_PUBLIC_SITE_URL` or an equivalent configured event origin.                         | Phase 2: `src/lib/public-url.ts` uses `NEXT_PUBLIC_SITE_URL` when present and falls back to `/room`; `public-url.test.ts` covers configured and fallback origins. |
 | [x]  | RIC-093 | Short event URL is visible beneath the QR.                                                       | Phase 2: `QRPanel` renders `formatShortEventUrl(roomUrl)` below the QR; e2e verifies `127.0.0.1:3100/room` is visible. |
-| [ ]  | RIC-094 | `/charts` reflects current draw/result state without manual refresh where needed.                |          |
+| [x]  | RIC-094 | `/charts` reflects current draw/result state without manual refresh where needed.                | Phase 8: `src/app/charts/ChartsAutoRefresh.tsx` polls with `router.refresh()` every 2000ms, and `tests/e2e/full-flow.spec.ts` keeps `/charts` open through draw, reroll, both-set display, and final reveal without manual navigation; `rtk npm run test:e2e` passes. |
 | [x]  | RIC-095 | `/results` reflects final reveal state from persisted data.                                      | Phase 5: `/results` is now async and calls `hydrateTournamentState()` before reading the current round result. |
 | [x]  | RIC-096 | Required routes remain present: `/stage`, `/room`, `/vote`, `/charts`, `/results`, `/coolguy69`. | Phase 5 verification: required route files remain under `src/app`, and the full build/e2e gates verify they compile/load. |
 
@@ -182,3 +182,7 @@ The remediation plan is complete only when:
 - Chart import and image cache setup have been run and verified with non-fallback chart artwork.
 - A full four-round rehearsal has been completed with persistent state.
 - Risks and assumptions are documented in `docs/phase-status.md`.
+
+As of Remediation Phase 8, the final closure gate is still blocked by the open real cached artwork
+items (`RIC-020`, `RIC-021`, `RIC-022`, and `RIC-028`) and by the pending full four-round rehearsal
+against persistent state. Do not treat the app as event-ready until those are verified and recorded.

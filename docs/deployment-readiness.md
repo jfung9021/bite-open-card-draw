@@ -45,6 +45,19 @@ Playwright requires a local browser install:
 rtk npx playwright install chromium
 ```
 
+## Release Blockers To Clear
+
+Do not use the release for tournament operation until:
+
+- `TOURNAMENT_STATE_BACKEND=supabase` is configured for the deployed environment.
+- `rtk npm run cache:chart-images` produces at least one non-fallback cached artwork file and
+  `public/chart-images/cache` or the chosen controlled storage has real files.
+- A complete four-round rehearsal has been run against persistent state.
+- Private CSV auto-download and the manual admin CSV download have both been verified after a final
+  reveal.
+- `docs/remediation-issue-checklist.md` has every row checked with evidence and its final closure
+  gate passes.
+
 ## Supabase Setup
 
 Apply migrations before event use:

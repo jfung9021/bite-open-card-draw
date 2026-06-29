@@ -15,6 +15,7 @@ Use this checklist on the event machine before players arrive and before every r
 - Run `npm run lint`, `npm run typecheck`, `npm run test`, and `npm run build` on the release branch.
 - Confirm production environment variables are set in Vercel and not committed to Git.
 - Confirm Supabase migrations are applied.
+- Confirm `TOURNAMENT_STATE_BACKEND=supabase` is configured for deployed or event use.
 - Run `rtk npm run import:charts` and confirm the output prints `Imported ... charts` plus required
   pool counts with every required pool at 7 or more.
 - Run `rtk npm run cache:chart-images` before the event. Expected output is
@@ -26,7 +27,8 @@ Use this checklist on the event machine before players arrive and before every r
 - Confirm the tournament logo renders correctly.
 - Confirm the admin password hash and session secret are configured.
 - Confirm the player roster has been imported and reviewed.
-- Run a complete four-round rehearsal using `docs/rehearsal-runbook.md`.
+- Run a complete four-round rehearsal using `docs/rehearsal-runbook.md` against persistent state.
+- During rehearsal, confirm private CSV auto-download and manual CSV download after final reveal.
 - Reset rehearsal data and confirm `Tournament mode` before importing or using real event data.
 
 ## Stage Laptop Checklist
@@ -87,6 +89,8 @@ Use this checklist on the event machine before players arrive and before every r
 - Review `Chart Eligibility`; use exclusion/re-inclusion controls only with an admin password and an
   audit reason, and confirm every required pool remains at 7 eligible charts or more.
 - Open `/stage` on the projector display.
+- Open `/charts` on a view-only display if needed and confirm it follows draw and final result state
+  without manual refresh.
 - Open `/room` and verify the QR destination works on a phone.
 
 ## Round Flow
@@ -112,10 +116,11 @@ For each round:
 5. Confirm Set 1 appears on `/stage`.
 6. Draw Set 2.
 7. Confirm Set 2 appears on `/stage`.
-8. Show both sets.
-9. Open voting.
-10. Monitor turnout.
-11. Do not reveal public chart-by-chart counts.
+8. Confirm `/charts` reflects the current draw if the view-only chart display is in use.
+9. Show both sets.
+10. Open voting.
+11. Monitor turnout.
+12. Do not reveal public chart-by-chart counts.
 
 ## During Voting
 

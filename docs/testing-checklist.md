@@ -1,16 +1,20 @@
 # Testing Checklist
 
-This checklist is a Phase 1 baseline. It should be expanded as automated tests are added.
+This checklist records the current automated gates, manual release gates, and historical phase
+coverage. Use `docs/product-spec.md` and `docs/pump_open_stage_repo_validation_checklist.md` as the
+source of truth when older phase labels are stale.
 
 ## Static Checks
 
-- `npm run lint`
-- `npm run typecheck`
-- `npm run test`
-- `npm run test:e2e`
-- `npm run build`
-- `npm run import:charts`
-- `npm run cache:chart-images -- --fallback-only`
+- `rtk npm run lint`
+- `rtk npm run typecheck`
+- `rtk npm run test`
+- `rtk npm run import:charts`
+- `rtk npm run cache:chart-images -- --fallback-only`
+- `rtk npm audit --omit=dev`
+- `rtk git diff --check`
+- `rtk npm run build`
+- `rtk npm run test:e2e`
 - E2E uses Playwright and runs the full Round 1 smoke flow.
 
 ## Phase 1 Shell Tests
@@ -80,6 +84,7 @@ This checklist is a Phase 1 baseline. It should be expanded as automated tests a
 ## Stage and Results Tests
 
 - `/stage` displays drawn charts and final selected charts.
+- `/charts` auto-refreshes drawn chart and final result state without manual refresh.
 - `/stage` shows both drawn sets together after both sets are available.
 - Stage preview uses exactly two horizontal 7-card rows: Set 1 on top and Set 2 on bottom.
 - Stage QR panel points to `/room`.
@@ -162,3 +167,13 @@ This checklist is a Phase 1 baseline. It should be expanded as automated tests a
   `playwright.config.ts`, not production credentials.
 - CI uses fallback image cache generation; real non-fallback chart artwork remains an event setup
   gate outside CI until upstream image fetching succeeds.
+
+## Remediation Phase 8 Final Reconciliation
+
+- Event-day, deployment, release, admin, and testing docs must agree that Supabase persistence is
+  required for deployed/event use.
+- `/charts` live-refresh coverage must remain in Playwright so a view-only chart display tracks draw,
+  reroll, and final reveal state.
+- Release is blocked until every remediation issue is checked with evidence, real cached image assets
+  are verified, a persistent four-round rehearsal is completed, and private CSV export is verified
+  after final reveal.

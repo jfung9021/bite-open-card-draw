@@ -2,13 +2,18 @@
 
 ## Current Remediation Status
 
-Status: remediation in progress; not event-ready.
+Status: remediation phases implemented through Phase 8; not event-ready because the final closure
+gate remains blocked.
 
 The app is not event-ready until every item in `docs/remediation-issue-checklist.md` is closed
 with evidence and the final closure gate in that checklist passes. The authoritative behavior
 sources during remediation are `docs/product-spec.md` and
 `docs/pump_open_stage_repo_validation_checklist.md`; they override stale execution-plan or phase
 status text when there is a conflict.
+
+As of Remediation Phase 8, the remaining known blockers are real cached chart artwork population
+and verification (`RIC-020`, `RIC-021`, `RIC-022`, and `RIC-028`) plus the full four-round rehearsal
+against persistent state required by the final closure gate.
 
 `docs/pump_open_stage_repo_validation_checklist.md` is present in the workspace and is intentionally
 called out as a required-read project document. As of this Phase 0 remediation note, `rtk git status
@@ -535,7 +540,78 @@ remediation rows still include real cached artwork population and `/charts` live
   boundary used by both memory and Supabase persistence without production credentials.
 - CI intentionally runs fallback image cache generation. Real non-fallback artwork remains an event
   setup blocker until `rtk npm run cache:chart-images` can produce cached assets.
-- `/charts` live-refresh coverage remains open in `RIC-094`.
+- `/charts` live-refresh coverage remains open until Remediation Phase 8.
+
+## Remediation Phase 8 - Final Documentation And Release Reconciliation
+
+Status: complete for final route-refresh and documentation reconciliation; not event-ready because
+real cached artwork verification and the full four-round persistent rehearsal remain open.
+
+### Acceptance Criteria
+
+- `/charts` live refresh: `/charts` now includes `ChartsAutoRefresh`, which polls with
+  `router.refresh()` every 2000ms.
+- `/charts` evidence: Playwright keeps an already-open `/charts` page through draw, reroll,
+  both-set display, and final reveal without manual navigation.
+- Release docs: release, deployment, event-day, admin, and testing docs now agree that deployed or
+  event use requires `TOURNAMENT_STATE_BACKEND=supabase`.
+- Final gates: release docs explicitly require the remediation issue checklist, real cached artwork
+  verification, a full four-round rehearsal against persistent state, and private CSV verification
+  after final reveal.
+- Stale docs: the current admin runbook no longer says operational mutations are in-memory only, and
+  the historical phase archive below is marked as superseded by the remediation status above.
+- Closure status: `RIC-094` is closed with e2e evidence; `RIC-020`, `RIC-021`, `RIC-022`, and
+  `RIC-028` remain open because real cached artwork was not verified.
+
+### Changed Files
+
+- `/charts` live refresh: `src/app/charts/ChartsAutoRefresh.tsx`, `src/app/charts/page.tsx`
+- E2E coverage: `tests/e2e/full-flow.spec.ts`
+- Documentation: `docs/admin-runbook.md`, `docs/deployment-readiness.md`,
+  `docs/event-day-runbook.md`, `docs/release-checklist.md`,
+  `docs/remediation-issue-checklist.md`, `docs/testing-checklist.md`,
+  `docs/phase-status.md`
+
+### Checks Run
+
+- `rtk npm run typecheck` - passed
+- `rtk npm run test:e2e` - passed, 2 Playwright tests
+- `rtk npm run lint` - passed
+- `rtk npm run test` - passed, 26 files / 75 tests
+- `rtk npm run import:charts` - passed, imported 4426 charts with required pool counts S16 189,
+  S17 196, S18 189, S19 167, S20 135, S21 150, S22 97, D23 125
+- `rtk npm run cache:chart-images -- --fallback-only` - passed, 0 cached and 639 fallback assets
+- `rtk npm audit --omit=dev` - passed
+- `rtk git diff --check` - passed
+- `rtk npm run build` - passed
+
+### Manual Review
+
+- Product rules: no round/set definitions, draw counts, ban rules, no-ban completion, voting window
+  rules, result selection, or tiebreak authority changed.
+- `/charts`: the new client polling is read-only and mirrors the existing public refresh pattern;
+  tournament-changing actions remain server-side.
+- Docs: deployment and runbook guidance now preserves the Phase 5 persistence requirement and does
+  not claim event readiness while the remediation closure gate remains blocked.
+- CSV: Playwright still verifies private CSV auto-download after final reveal and the manual admin
+  download button; release docs require repeating that check during full rehearsal.
+
+### Risks And Assumptions
+
+- A full four-round browser rehearsal against persistent state was not completed in this phase; it
+  remains a release blocker.
+- Real cached artwork is still unverified. Prior Phase 6 non-fallback cache attempts produced
+  `0 cached, 639 using fallback`; do not close `RIC-020`, `RIC-021`, `RIC-022`, or `RIC-028` until
+  real cached files and rendering are verified.
+- CI/local checks use fallback image cache generation; non-fallback artwork remains an event setup
+  gate.
+
+## Historical Implementation Phase Archive
+
+The sections below predate the remediation plan and are retained as historical implementation notes.
+When they conflict with the current remediation status above, `docs/product-spec.md`,
+`docs/pump_open_stage_repo_validation_checklist.md`, and `docs/remediation-issue-checklist.md` are
+authoritative.
 
 ## Phase 1 - Project Scaffold, Docs, And Route Skeleton
 
