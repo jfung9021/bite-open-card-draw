@@ -128,6 +128,13 @@ describe("Phase 2 database schema", () => {
     expect(migration).toContain("exactly 7 drawn charts");
   });
 
+  it("stores draw eligible pool and blocking context snapshots", () => {
+    expect(migration).toContain("eligible_chart_ids uuid[]");
+    expect(migration).toContain("excluded_chart_keys_snapshot text[]");
+    expect(migration).toContain("selected_song_keys_snapshot text[]");
+    expect(migration).toContain("same_round_blocked_song_keys_snapshot text[]");
+  });
+
   it("keeps generated database types aligned with all runtime tables", () => {
     expect([...GENERATED_DATABASE_TYPE_TABLES].sort()).toEqual([...CORE_DATABASE_TABLES].sort());
   });
