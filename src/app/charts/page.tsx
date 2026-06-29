@@ -2,6 +2,7 @@ import { ResultSetPanel, RoundHeader, StageDrawCard, StageSetPanel } from "@/com
 import { adminState } from "@/lib/server/admin-state";
 import { hydrateTournamentState } from "@/lib/server/persistence";
 import { buildStageRoundView } from "@/lib/stage/stage-view";
+import { ChartsAutoRefresh } from "./ChartsAutoRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export default async function ChartsPage() {
   if (result?.revealPhase === "final") {
     return (
       <main className="min-h-screen">
+        <ChartsAutoRefresh />
         <RoundHeader title={`ROUND ${roundNumber} FINAL CHARTS`} status="View-only results" />
         <section className="mx-auto grid max-w-7xl gap-5 px-5 py-5">
           <div className="grid gap-4 md:grid-cols-2">
@@ -35,6 +37,7 @@ export default async function ChartsPage() {
 
   return (
     <main className="min-h-screen">
+      <ChartsAutoRefresh />
       <RoundHeader title="Drawn Charts" status="View-only chart display" />
       <section className="mx-auto grid max-w-7xl gap-5 px-5 py-5 lg:grid-cols-2">
         {view.sets.map(({ set, draw }) => (

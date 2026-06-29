@@ -20,6 +20,7 @@ Implemented now:
 - manual ballot overrides with password re-entry and audit reason
 - result computation and reveal controls
 - private CSV auto/manual download
+- chart eligibility exclusions and re-inclusions with pool-count validation
 
 ## Required Admin Rules
 
@@ -47,9 +48,9 @@ Dangerous actions include:
 - overriding a result
 - resetting a round
 
-## Current Phase Notes
+## Persistence And Event Mode
 
-The Phase 11 implementation still uses server-only in-memory operational stores because Supabase
-credentials/tooling are not wired into runtime mutations yet. This keeps all mutations server-side
-for local testing and rehearsal, but persistence must move to Supabase tables before multi-instance
-or serverless event use.
+Tournament-changing actions remain server-side. For deployed or event use, set
+`TOURNAMENT_STATE_BACKEND=supabase` so the app hydrates and persists operational state through the
+Supabase snapshot repository before and after mutations. `TOURNAMENT_STATE_BACKEND=memory` is only
+for tests, local demos, or single-process development.
