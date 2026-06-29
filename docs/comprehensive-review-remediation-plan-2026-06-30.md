@@ -212,6 +212,41 @@ Exit criteria:
 - Draw audit can reconstruct the eligible pool used at draw time.
 - Docs consistently describe least-banned-to-most-banned reveal order.
 
+### Phase 4 Handoff Context
+
+Status: complete.
+
+Implementation notes to preserve:
+
+- Draw creation now uses a plan-then-commit path. Eligibility and replacement charts are computed
+  before any active draw is superseded, and full-round rerolls plan both sets before committing
+  either one.
+- `rerollOneChart()` always excludes the exact target chart key. It prefers a different song by
+  blocking the target song, falling back only to a different chart from the target song if no
+  different-song replacement exists.
+- Each new draw record carries `eligibleChartIds`, `excludedChartKeysSnapshot`,
+  `selectedSongKeysSnapshot`, and `sameRoundBlockedSongKeysSnapshot`. Normalized `draws` rows store
+  the same arrays through migration `20260630030000_draw_eligible_pool_snapshots.sql`.
+- Result computation special-cases true zero-ballot sets. Those sets still have a backend-decided
+  winner, but now expose all seven charts as wheel slots. Non-zero 5+ least-ban ties still use the
+  fallback reveal path.
+- Selected-song blocks are reconciled from every computed result snapshot, not only final results.
+  Compute, reopen/manual-ballot invalidation, reset, override, and restore paths all resync the
+  block list from `ResultStore` so drawing ahead after compute cannot reuse a prior selected song.
+- Stale docs in `docs/codex-execution-plan.md` and `docs/phase-status.md` were updated to least
+  banned to most banned.
+
+Verification:
+
+- Focused regression command passed:
+  `rtk npm run test -- src/lib/draw/draw-state.test.ts src/lib/results/result-engine.test.ts src/lib/integration/tournament-flow.test.ts src/lib/persistence/operational-state.test.ts src/lib/server/normalized-operational-state.test.ts src/lib/db/schema.test.ts`
+- Full phase gates are recorded in `docs/phase-status.md`.
+
+Deferred items:
+
+- None for Phase 4. Existing Phase 9 deferrals for hosted Supabase row-scoped persistence and
+  database-time transactional timer mutation remain unchanged.
+
 ## Phase 5 - Admin Security And Dangerous Actions
 
 Addresses: `CR-016`, `CR-019`, `CR-020`, `CR-021`, `CR-022`.

@@ -25,6 +25,10 @@ export type DrawRecord = {
   displayLabel: string;
   version: number;
   eligiblePoolCount: number;
+  eligibleChartIds?: string[];
+  excludedChartKeysSnapshot?: string[];
+  selectedSongKeysSnapshot?: string[];
+  sameRoundBlockedSongKeysSnapshot?: string[];
   charts: DrawnChartSummary[];
   createdAt: string;
   supersededAt: string | null;
@@ -36,6 +40,20 @@ export type DrawStateStoreSnapshot = {
   selectedSongKeys: string[];
   excludedChartKeys?: string[];
   chartExclusions?: ChartExclusion[];
+};
+
+type DrawPlan = {
+  key: string;
+  history: DrawRecord[];
+  now: string;
+  set: ReturnType<typeof getRoundSetDefinition>;
+  eligiblePoolCount: number;
+  eligibleChartIds: string[];
+  excludedChartKeysSnapshot: string[];
+  selectedSongKeysSnapshot: string[];
+  sameRoundBlockedSongKeysSnapshot: string[];
+  charts: DrawnChartSummary[];
+  reason: string;
 };
 
 function drawKey(roundNumber: 1 | 2 | 3 | 4, setOrder: 1 | 2) {
@@ -180,18 +198,20 @@ export class DrawStateStore {
   }
 
   rerollFullRound(input: { roundNumber: 1 | 2 | 3 | 4; reason: string }) {
-    const first = this.createDrawRecord({
+    const firstPlan = this.planDrawRecord({
       roundNumber: input.roundNumber,
       setOrder: 1,
       reason: input.reason,
+      sameRoundBlockedSongKeys: [],
     });
-    const second = this.createDrawRecord({
+    const secondPlan = this.planDrawRecord({
       roundNumber: input.roundNumber,
       setOrder: 2,
       reason: input.reason,
+      sameRoundBlockedSongKeys: firstPlan.charts.map((chart) => chart.songKey),
     });
 
-    return [first, second] as const;
+    return [this.commitDrawPlan(firstPlan), this.commitDrawPlan(secondPlan)] as const;
   }
 
   rerollOneChart(input: {
@@ -212,23 +232,37 @@ export class DrawStateStore {
       throw new Error("Chart is not part of the active draw.");
     }
 
-    const set = getRoundSetDefinition(input.roundNumber, input.setOrder);
     const otherSetDraw = this.getActiveDraw(input.roundNumber, input.setOrder === 1 ? 2 : 1);
-    const blockedSongs = new Set([
-      ...this.selectedSongKeys,
-      ...(otherSetDraw?.charts.map((chart) => chart.songKey) ?? []),
-      ...current.charts.filter((chart) => chart.id !== input.chartId).map((chart) => chart.songKey),
+    const target = current.charts[targetIndex] as DrawnChartSummary;
+    const excludedChartKeys = new Set([
+      ...this.getExcludedChartKeys(),
+      ...current.charts.map((chart) => chart.chartKey),
     ]);
-    const currentChartKeys = new Set(
-      current.charts.filter((chart) => chart.id !== input.chartId).map((chart) => chart.chartKey),
-    );
-    const eligible = getEligibleChartsForSet({
-      charts: this.getCharts(),
-      set,
-      excludedChartKeys: new Set([...this.getExcludedChartKeys(), ...currentChartKeys]),
-      selectedSongKeys: this.selectedSongKeys,
-      sameRoundBlockedSongKeys: blockedSongs,
-    });
+    const otherSetSongKeys = otherSetDraw?.charts.map((chart) => chart.songKey) ?? [];
+    const preferredBlockedSongs = new Set([
+      ...(otherSetDraw?.charts.map((chart) => chart.songKey) ?? []),
+      ...current.charts.map((chart) => chart.songKey),
+    ]);
+    const fallbackBlockedSongs = new Set([
+      ...otherSetSongKeys,
+      ...current.charts
+        .filter((chart) => chart.songKey !== target.songKey)
+        .map((chart) => chart.songKey),
+    ]);
+    const set = getRoundSetDefinition(input.roundNumber, input.setOrder);
+    const getReplacementEligible = (sameRoundBlockedSongKeys: ReadonlySet<string>) =>
+      getEligibleChartsForSet({
+        charts: this.getCharts(),
+        set,
+        excludedChartKeys,
+        selectedSongKeys: this.selectedSongKeys,
+        sameRoundBlockedSongKeys,
+      });
+    const preferredEligible = getReplacementEligible(preferredBlockedSongs);
+    const sameRoundBlockedSongKeys =
+      preferredEligible.length > 0 ? preferredBlockedSongs : fallbackBlockedSongs;
+    const eligible =
+      preferredEligible.length > 0 ? preferredEligible : getReplacementEligible(fallbackBlockedSongs);
 
     if (eligible.length < 1) {
       throw new Error(`No eligible replacement chart exists for ${set.displayLabel}.`);
@@ -246,6 +280,9 @@ export class DrawStateStore {
       reason: input.reason,
       explicitCharts: charts,
       eligiblePoolCount: eligible.length,
+      eligibleChartIds: eligible.map((chart) => chart.id),
+      excludedChartKeys,
+      sameRoundBlockedSongKeys,
     });
   }
 
@@ -255,52 +292,98 @@ export class DrawStateStore {
     reason: string;
     explicitCharts?: DrawnChartSummary[];
     eligiblePoolCount?: number;
+    eligibleChartIds?: string[];
+    excludedChartKeys?: Iterable<string>;
+    selectedSongKeys?: Iterable<string>;
+    sameRoundBlockedSongKeys?: Iterable<string>;
   }) {
+    return this.commitDrawPlan(this.planDrawRecord(input));
+  }
+
+  private planDrawRecord(input: {
+    roundNumber: 1 | 2 | 3 | 4;
+    setOrder: 1 | 2;
+    reason: string;
+    explicitCharts?: DrawnChartSummary[];
+    eligiblePoolCount?: number;
+    eligibleChartIds?: string[];
+    excludedChartKeys?: Iterable<string>;
+    selectedSongKeys?: Iterable<string>;
+    sameRoundBlockedSongKeys?: Iterable<string>;
+  }): DrawPlan {
     const set = getRoundSetDefinition(input.roundNumber, input.setOrder);
     const key = drawKey(input.roundNumber, input.setOrder);
     const history = this.drawHistory.get(key) ?? [];
     const now = new Date().toISOString();
+    const otherSetDraw = this.getActiveDraw(input.roundNumber, input.setOrder === 1 ? 2 : 1);
+    const excludedChartKeysSnapshot = [
+      ...new Set(input.excludedChartKeys ?? this.getExcludedChartKeys()),
+    ].sort();
+    const selectedSongKeysSnapshot = [
+      ...new Set(input.selectedSongKeys ?? this.selectedSongKeys),
+    ].sort();
+    const sameRoundBlockedSongKeysSnapshot = [
+      ...new Set(
+        input.sameRoundBlockedSongKeys ??
+          (otherSetDraw?.charts.map((chart) => chart.songKey) ?? []),
+      ),
+    ].sort();
+    const eligibilityInput = {
+      charts: this.getCharts(),
+      set,
+      excludedChartKeys: new Set(excludedChartKeysSnapshot),
+      selectedSongKeys: new Set(selectedSongKeysSnapshot),
+      sameRoundBlockedSongKeys: new Set(sameRoundBlockedSongKeysSnapshot),
+    };
+    const eligible = getEligibleChartsForSet(eligibilityInput);
+    const drawn = input.explicitCharts
+      ? {
+          eligiblePoolCount: input.eligiblePoolCount ?? eligible.length,
+          charts: input.explicitCharts,
+        }
+      : drawChartsForSet(eligibilityInput, this.randomIndex);
 
-    for (const draw of history) {
+    return {
+      key,
+      history,
+      now,
+      set,
+      eligiblePoolCount: drawn.eligiblePoolCount,
+      eligibleChartIds: [...(input.eligibleChartIds ?? eligible.map((chart) => chart.id))],
+      excludedChartKeysSnapshot,
+      selectedSongKeysSnapshot,
+      sameRoundBlockedSongKeysSnapshot,
+      charts: drawn.charts,
+      reason: input.reason,
+    };
+  }
+
+  private commitDrawPlan(plan: DrawPlan) {
+    for (const draw of plan.history) {
       if (!draw.supersededAt) {
-        draw.supersededAt = now;
+        draw.supersededAt = plan.now;
       }
     }
 
-    const otherSetDraw = this.getActiveDraw(input.roundNumber, input.setOrder === 1 ? 2 : 1);
-    const drawn = input.explicitCharts
-      ? {
-          eligiblePoolCount: input.eligiblePoolCount ?? input.explicitCharts.length,
-          charts: input.explicitCharts,
-        }
-      : drawChartsForSet(
-          {
-            charts: this.getCharts(),
-            set,
-            excludedChartKeys: new Set(this.getExcludedChartKeys()),
-            selectedSongKeys: this.selectedSongKeys,
-            sameRoundBlockedSongKeys: new Set(
-              otherSetDraw?.charts.map((chart) => chart.songKey) ?? [],
-            ),
-          },
-          this.randomIndex,
-        );
-
     const record: DrawRecord = {
       id: randomUUID(),
-      roundSetId: set.id,
-      roundNumber: input.roundNumber,
-      setOrder: input.setOrder,
-      displayLabel: set.displayLabel,
-      version: history.length + 1,
-      eligiblePoolCount: drawn.eligiblePoolCount,
-      charts: drawn.charts,
-      createdAt: now,
+      roundSetId: plan.set.id,
+      roundNumber: plan.set.roundNumber,
+      setOrder: plan.set.setOrder,
+      displayLabel: plan.set.displayLabel,
+      version: plan.history.length + 1,
+      eligiblePoolCount: plan.eligiblePoolCount,
+      eligibleChartIds: plan.eligibleChartIds,
+      excludedChartKeysSnapshot: plan.excludedChartKeysSnapshot,
+      selectedSongKeysSnapshot: plan.selectedSongKeysSnapshot,
+      sameRoundBlockedSongKeysSnapshot: plan.sameRoundBlockedSongKeysSnapshot,
+      charts: plan.charts,
+      createdAt: plan.now,
       supersededAt: null,
-      reason: input.reason,
+      reason: plan.reason,
     };
 
-    this.drawHistory.set(key, [...history, record]);
+    this.drawHistory.set(plan.key, [...plan.history, record]);
 
     return record;
   }
@@ -311,6 +394,12 @@ export class DrawStateStore {
         .flat()
         .map((draw) => ({
           ...draw,
+          eligibleChartIds: [...(draw.eligibleChartIds ?? [])],
+          excludedChartKeysSnapshot: [...(draw.excludedChartKeysSnapshot ?? [])],
+          selectedSongKeysSnapshot: [...(draw.selectedSongKeysSnapshot ?? [])],
+          sameRoundBlockedSongKeysSnapshot: [
+            ...(draw.sameRoundBlockedSongKeysSnapshot ?? []),
+          ],
           charts: draw.charts.map((chart) => ({ ...chart })),
         })),
       selectedSongKeys: [...this.selectedSongKeys].sort(),
@@ -329,6 +418,12 @@ export class DrawStateStore {
       history.push({
         ...draw,
         roundSetId: draw.roundSetId ?? getRoundSetDefinition(draw.roundNumber, draw.setOrder).id,
+        eligibleChartIds: [...(draw.eligibleChartIds ?? draw.charts.map((chart) => chart.id))],
+        excludedChartKeysSnapshot: [...(draw.excludedChartKeysSnapshot ?? [])],
+        selectedSongKeysSnapshot: [...(draw.selectedSongKeysSnapshot ?? [])],
+        sameRoundBlockedSongKeysSnapshot: [
+          ...(draw.sameRoundBlockedSongKeysSnapshot ?? []),
+        ],
         charts: draw.charts.map((chart) => ({ ...chart })),
       });
       this.drawHistory.set(key, history.sort((left, right) => left.version - right.version));

@@ -178,7 +178,11 @@ function fallbackChartSummary(chartId: string, displayDifficulty = "S16"): Drawn
   };
 }
 
-function buildWheelSlots(candidates: DrawnChartSummary[]) {
+function buildWheelSlots(candidates: DrawnChartSummary[], zeroBallotTiebreak = false) {
+  if (zeroBallotTiebreak) {
+    return [...candidates];
+  }
+
   if (candidates.length < 2 || candidates.length > 4) {
     return [];
   }
@@ -542,6 +546,10 @@ export class NormalizedOperationalStateRepository implements OperationalStateRep
         draw_version: draw.version,
         status: draw.supersededAt ? "superseded" : "active",
         eligible_pool_count: draw.eligiblePoolCount,
+        eligible_chart_ids: draw.eligibleChartIds ?? [],
+        excluded_chart_keys_snapshot: draw.excludedChartKeysSnapshot ?? [],
+        selected_song_keys_snapshot: draw.selectedSongKeysSnapshot ?? [],
+        same_round_blocked_song_keys_snapshot: draw.sameRoundBlockedSongKeysSnapshot ?? [],
         created_at: draw.createdAt,
         superseded_at: draw.supersededAt,
         reason: draw.reason,
@@ -730,7 +738,7 @@ export class NormalizedOperationalStateRepository implements OperationalStateRep
             candidate_chart_ids: set.tiebreakCandidateIds,
             winner_chart_id: set.tiebreakWinnerChartId as string,
             decided_at: result.computedAt,
-            decision_source: "server",
+            decision_source: set.zeroBallotTiebreak ? "server_zero_ballot" : "server",
             winner_reveal_started_at: set.winnerRevealStartedAt,
           })),
       ),
@@ -799,6 +807,10 @@ export class NormalizedOperationalStateRepository implements OperationalStateRep
           displayLabel: set.displayLabel,
           version: draw.draw_version,
           eligiblePoolCount: draw.eligible_pool_count,
+          eligibleChartIds: [...draw.eligible_chart_ids],
+          excludedChartKeysSnapshot: [...draw.excluded_chart_keys_snapshot],
+          selectedSongKeysSnapshot: [...draw.selected_song_keys_snapshot],
+          sameRoundBlockedSongKeysSnapshot: [...draw.same_round_blocked_song_keys_snapshot],
           charts: (drawnByDrawId.get(draw.id) ?? [])
             .sort((left, right) => left.draw_order - right.draw_order)
             .map((row) => charts.get(row.chart_id) ?? fallbackChartSummary(row.chart_id, set.displayLabel)),
@@ -905,6 +917,8 @@ export class NormalizedOperationalStateRepository implements OperationalStateRep
             tiebreak?.candidate_chart_ids.map(
               (chartId) => charts.get(chartId) ?? fallbackChartSummary(chartId, set.displayLabel),
             ) ?? [];
+          const zeroBallotTiebreak = tiebreak?.decision_source === "server_zero_ballot";
+          const wheelSlots = buildWheelSlots(candidates, zeroBallotTiebreak);
 
           return {
             drawId: firstRow.draw_id,
@@ -919,8 +933,9 @@ export class NormalizedOperationalStateRepository implements OperationalStateRep
             tiebreakUsed: Boolean(tiebreak),
             tiebreakCandidateIds: tiebreak?.candidate_chart_ids ?? [],
             tiebreakWinnerChartId: tiebreak?.winner_chart_id ?? null,
-            wheelSlots: buildWheelSlots(candidates),
-            wheelSupported: candidates.length >= 2 && candidates.length <= 4,
+            wheelSlots,
+            wheelSupported: wheelSlots.length > 0,
+            zeroBallotTiebreak,
             winnerRevealStartedAt: tiebreak?.winner_reveal_started_at ?? null,
           };
         })

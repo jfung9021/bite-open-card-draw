@@ -11,6 +11,7 @@ import {
 } from "@/lib/persistence/debug-export";
 import { createOperationalStateSnapshot } from "@/lib/persistence/operational-state";
 import { generatePrivateBallotCsv } from "@/lib/results/private-csv";
+import { syncSelectedSongBlocksFromResultStore } from "@/lib/results/selected-song-blocks";
 import { adminState, resetTournamentOperationalState } from "@/lib/server/admin-state";
 import {
   ADMIN_PASSWORD_MAX_LENGTH,
@@ -110,9 +111,14 @@ function selectedSongKeysForRound(roundNumber: 1 | 2 | 3 | 4) {
     ?.sets.map((set) => set.selectedChart.songKey) ?? [];
 }
 
+function syncSelectedSongBlocks() {
+  syncSelectedSongBlocksFromResultStore(adminState.drawStateStore, adminState.resultStore);
+}
+
 function resetRoundState(roundNumber: 1 | 2 | 3 | 4) {
   adminState.drawStateStore.unmarkSelectedSongs(selectedSongKeysForRound(roundNumber));
   adminState.resultStore.resetRound(roundNumber);
+  syncSelectedSongBlocks();
   adminState.ballotStore.resetRound(roundNumber);
   adminState.votingWindowStore.resetRound(roundNumber);
   adminState.drawStateStore.resetRound(roundNumber);
@@ -144,6 +150,7 @@ function invalidateRoundVotingForReroll(
   });
 
   adminState.resultStore.clearRoundResult(roundNumber);
+  syncSelectedSongBlocks();
   adminState.votingWindowStore.resetRound(roundNumber);
   adminState.ballotStore.setPhoneStatus(roundNumber, { phase: "voting_open" });
 
@@ -691,6 +698,7 @@ export async function manualBallotAction(formData: FormData) {
 
     if (result?.revealPhase === "computed") {
       adminState.resultStore.clearRoundResult(roundNumber);
+      syncSelectedSongBlocks();
       adminState.votingWindowStore.returnToClosedForRecompute(roundNumber);
     }
 
@@ -738,6 +746,7 @@ export async function computeResultsAction(formData: FormData) {
       eligiblePlayers: snapshot.eligiblePlayers,
       now: snapshot.serverNow,
     });
+    syncSelectedSongBlocks();
     adminState.votingWindowStore.setResultsPhase(roundNumber, "results_computed");
     adminState.ballotStore.setPhoneStatus(roundNumber, { phase: "closed_revealing" });
     audit(session, {
@@ -774,9 +783,7 @@ export async function advanceResultRevealAction(formData: FormData) {
         })),
       });
 
-      for (const set of result.sets) {
-        adminState.drawStateStore.markSelectedSong(set.selectedChart.songKey);
-      }
+      syncSelectedSongBlocks();
     } else {
       adminState.votingWindowStore.setResultsPhase(roundNumber, "results_revealing");
       adminState.ballotStore.setPhoneStatus(roundNumber, { phase: "closed_revealing" });
@@ -1028,6 +1035,7 @@ export async function reopenVotingAction(formData: FormData) {
 
     if (result?.revealPhase === "computed") {
       adminState.resultStore.clearRoundResult(roundNumber);
+      syncSelectedSongBlocks();
       adminState.votingWindowStore.returnToClosedForRecompute(roundNumber);
     }
 
@@ -1102,15 +1110,9 @@ export async function overrideResultAction(formData: FormData) {
     });
     const correctedSet = result.sets.find((set) => set.setOrder === setOrder);
 
+    syncSelectedSongBlocks();
+
     if (result.revealPhase === "final") {
-      if (oldSelected) {
-        adminState.drawStateStore.unmarkSelectedSongs([oldSelected.songKey]);
-      }
-
-      if (correctedSet) {
-        adminState.drawStateStore.markSelectedSong(correctedSet.selectedChart.songKey);
-      }
-
       adminState.ballotStore.setPhoneStatus(roundNumber, {
         phase: "revealed",
         selectedCharts: result.sets.map((set) => ({

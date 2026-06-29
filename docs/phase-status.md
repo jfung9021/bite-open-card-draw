@@ -1077,7 +1077,7 @@ Status: complete
 ### Acceptance Criteria
 
 - Result computation: each drawn chart gets a ban count, including zero-ban charts
-- Sort order: result rows reveal from most banned to least banned, with tied rows sorted alphabetically
+- Sort order: result rows reveal from least banned to most banned, with tied rows sorted alphabetically
 - Selection: each set selects the chart with the fewest bans
 - Tiebreaks: tied least-ban charts use a backend-decided winner before reveal
 - Rune wheel: 2-4 chart least-ban ties produce a 12-slot wheel animation that reveals the committed winner
@@ -1768,3 +1768,59 @@ database-time timer mutation remains deferred to remediation Phase 9.
   Supabase row-scoped/transactional mutations.
 - A late read can derive closed/extension status without persisting it; the next timer-related
   mutation persists the advanced state.
+
+## Comprehensive Review Remediation Phase 4 - Draw And Result Rule Hardening
+
+Status: complete.
+
+### Checklist Items Addressed
+
+- CR-004: closed. Selected-song blocks are synchronized from all computed result snapshots, not only
+  final reveals, so future draws after compute but before final stage reveal exclude prior selected
+  songs.
+- CR-009: closed. True zero-ballot sets now use a backend-decided seven-chart wheel; non-zero 5+
+  least-ban ties still use the documented fallback reveal.
+- CR-010: closed. Draw records are planned and validated before active history is superseded, and
+  full-round rerolls commit only after both replacement sets are planned successfully.
+- CR-011: closed. One-chart rerolls exclude the exact target chart and prefer a different song,
+  falling back only to a different chart from the target song if needed.
+- CR-012: closed. Draw records now persist eligible chart IDs plus exclusion, selected-song, and
+  same-round-blocking snapshots in operational state and normalized `draws` rows.
+- CR-032: closed. Stale source docs now describe result reveal order as least banned to most banned.
+
+### Changed Files
+
+- Added `src/lib/results/selected-song-blocks.ts`
+- Added `supabase/migrations/20260630030000_draw_eligible_pool_snapshots.sql`
+- Updated `src/lib/draw/draw-state.ts` and `src/lib/draw/draw-state.test.ts`
+- Updated `src/lib/results/result-engine.ts` and `src/lib/results/result-engine.test.ts`
+- Updated `src/components/RuneWheel.tsx`
+- Updated `src/app/coolguy69/actions.ts`
+- Updated operational restore and normalized persistence files/tests
+- Updated database type/schema tests and remediation documentation
+
+### Checks Run
+
+- `rtk npm run lint` - passed.
+- `rtk npm run typecheck` - passed.
+- `rtk npm run test` - passed, 36 files / 134 tests.
+- `rtk npm run build` - passed.
+- `rtk npm run test:e2e` - passed, 2 Playwright tests.
+- Additional focused regression command passed before full gates:
+  `rtk npm run test -- src/lib/draw/draw-state.test.ts src/lib/results/result-engine.test.ts src/lib/integration/tournament-flow.test.ts src/lib/persistence/operational-state.test.ts src/lib/server/normalized-operational-state.test.ts src/lib/db/schema.test.ts`
+
+### Manual Review
+
+- Product spec: least-banned winner selection, least-to-most reveal order, backend-decided
+  tiebreaks, same-round duplicate blocking, and selected-prior-song blocking remain aligned.
+- Security: no browser randomness or client-side tournament mutation path was added; selected-song
+  block synchronization happens through server-side result/admin state.
+- Data/audit: new draw audit arrays are additive and persisted in both snapshot and normalized
+  runtime paths.
+
+### Risks And Assumptions
+
+- Existing Supabase projects need migration `20260630030000_draw_eligible_pool_snapshots.sql`
+  applied before relying on normalized draw audit columns.
+- Phase 4 has no deferred items. Existing Phase 9 deferrals for hosted Supabase row-scoped
+  persistence and database-time transactional timer mutation remain open.

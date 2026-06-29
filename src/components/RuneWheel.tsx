@@ -34,6 +34,7 @@ export function RuneWheel({
 }: RuneWheelProps) {
   const winner = slots.find((slot) => slot.id === winnerChartId);
   const progress = revealProgress(winnerRevealStartedAt, nowMs);
+  const slotAngle = slots.length > 0 ? 360 / slots.length : 0;
   const wheelStyle = {
     transform: `rotate(${progress * 720}deg)`,
     "--rune-wheel-duration": `${TIEBREAK_REVEAL_DURATION_MS}ms`,
@@ -56,8 +57,8 @@ export function RuneWheel({
                 key={`${slot.id}-${index}`}
                 style={
                   {
-                    "--rune-slot-angle": `${index * 30}deg`,
-                    "--rune-slot-counter-angle": `${index * -30}deg`,
+                    "--rune-slot-angle": `${index * slotAngle}deg`,
+                    "--rune-slot-counter-angle": `${index * -slotAngle}deg`,
                   } as CSSProperties
                 }
                 className={clsx(

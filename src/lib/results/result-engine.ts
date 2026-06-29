@@ -26,6 +26,7 @@ export type ResultSetSnapshot = {
   tiebreakWinnerChartId: string | null;
   wheelSlots: DrawnChartSummary[];
   wheelSupported: boolean;
+  zeroBallotTiebreak?: boolean;
   winnerRevealStartedAt: string | null;
 };
 
@@ -65,7 +66,11 @@ function sortResultRows(left: ResultChartRow, right: ResultChartRow) {
   return left.chart.name.localeCompare(right.chart.name);
 }
 
-function buildWheelSlots(candidates: DrawnChartSummary[]) {
+export function buildWheelSlots(candidates: DrawnChartSummary[], zeroBallotTiebreak = false) {
+  if (zeroBallotTiebreak) {
+    return [...candidates];
+  }
+
   if (candidates.length < 2 || candidates.length > 4) {
     return [];
   }
@@ -90,16 +95,21 @@ export function computeResultSet(
     }
   }
 
+  const ballotCountForSet = ballots.filter((ballot) =>
+    ballot.choices.some((choice) => choice.drawId === draw.id),
+  ).length;
   const leastBanCount = Math.min(...banCounts.values());
   const maxBanCount = Math.max(...banCounts.values());
   const leastBannedCharts = draw.charts
     .filter((chart) => banCounts.get(chart.id) === leastBanCount)
     .sort((left, right) => left.name.localeCompare(right.name));
   const tiebreakUsed = leastBannedCharts.length > 1;
+  const zeroBallotTiebreak =
+    ballotCountForSet === 0 && leastBannedCharts.length === draw.charts.length;
   const selectedChart = tiebreakUsed
     ? (leastBannedCharts[randomIndex(leastBannedCharts.length)] as DrawnChartSummary)
     : (leastBannedCharts[0] as DrawnChartSummary);
-  const wheelSlots = buildWheelSlots(leastBannedCharts);
+  const wheelSlots = buildWheelSlots(leastBannedCharts, zeroBallotTiebreak);
 
   return {
     drawId: draw.id,
@@ -122,7 +132,8 @@ export function computeResultSet(
     tiebreakCandidateIds: leastBannedCharts.map((chart) => chart.id),
     tiebreakWinnerChartId: tiebreakUsed ? selectedChart.id : null,
     wheelSlots,
-    wheelSupported: wheelSlots.length === 12,
+    wheelSupported: wheelSlots.length > 0,
+    zeroBallotTiebreak,
     winnerRevealStartedAt: null,
   };
 }

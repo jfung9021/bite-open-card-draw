@@ -143,7 +143,7 @@ For each chart set:
 
 - count bans per drawn chart
 - include charts with zero bans
-- reveal from most banned to least banned
+- reveal from least banned to most banned
 - show ban count badges and small count bars
 - ties that are not part of the least-ban decision are revealed alphabetically
 - if the least-banned chart is unique, select it
@@ -151,9 +151,9 @@ For each chart set:
 
 The result reveal order for each round is:
 
-1. Reveal Set 1 results from most banned to least banned.
+1. Reveal Set 1 results from least banned to most banned.
 2. Resolve Set 1 selected chart.
-3. Reveal Set 2 results from most banned to least banned.
+3. Reveal Set 2 results from least banned to most banned.
 4. Resolve Set 2 selected chart.
 5. Show final screen with both selected charts together.
 
@@ -1389,7 +1389,7 @@ For each set:
 
 - count bans per chart
 - include zero-ban charts
-- sort from most banned to least banned
+- sort from least banned to most banned
 - identify least-ban chart or tied least-ban group
 
 No percentages.
@@ -1398,9 +1398,9 @@ No percentages.
 
 Reveal one set at a time:
 
-1. Show Set 1 results from most banned to least banned.
+1. Show Set 1 results from least banned to most banned.
 2. Resolve Set 1 winner.
-3. Show Set 2 results from most banned to least banned.
+3. Show Set 2 results from least banned to most banned.
 4. Resolve Set 2 winner.
 5. Show final two selected charts together.
 

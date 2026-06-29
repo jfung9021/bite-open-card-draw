@@ -3,6 +3,7 @@ import { HostLockStore, type HostLockStoreSnapshot } from "@/lib/admin/host-lock
 import { RosterStore, type RosterStoreSnapshot } from "@/lib/admin/roster";
 import { DrawStateStore, type DrawStateStoreSnapshot } from "@/lib/draw/draw-state";
 import { getRoundSetDefinition } from "@/lib/draw/draw-engine";
+import { selectedSongKeysFromResults } from "@/lib/results/selected-song-blocks";
 import { ResultStore, type ResultStoreSnapshot } from "@/lib/results/result-store";
 import { RoundStateStore, type RoundStateSnapshot } from "@/lib/round/round-state";
 import { BallotStore, type BallotStoreSnapshot } from "@/lib/vote/ballot-store";
@@ -79,9 +80,7 @@ export function restoreOperationalStateSnapshot(
   stores.resultStore.importSnapshot(migratedSnapshot.result);
   stores.roundStateStore.importSnapshot(migratedSnapshot.roundState);
 
-  const selectedSongKeys = migratedSnapshot.result.results
-    .filter((result) => result.revealPhase === "final")
-    .flatMap((result) => result.sets.map((set) => set.selectedChart.songKey));
+  const selectedSongKeys = selectedSongKeysFromResults(migratedSnapshot.result.results);
 
   stores.drawStateStore.importSnapshot({
     ...migratedSnapshot.draw,

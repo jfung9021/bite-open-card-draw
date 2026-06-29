@@ -114,4 +114,64 @@ describe("result engine", () => {
       "Bravo",
     ]);
   });
+
+  it("uses a seven-chart wheel for true zero-ballot sets", () => {
+    const setOneCharts = Array.from({ length: 7 }, (_, index) =>
+      chart(`a-${index}`, `Alpha ${index}`),
+    );
+    const setTwoCharts = Array.from({ length: 7 }, (_, index) =>
+      chart(`b-${index}`, `Bravo ${index}`),
+    );
+
+    const result = computeRoundResult({
+      id: "result",
+      roundNumber: 1,
+      draws: [
+        draw("draw-1", 1, "S16", setOneCharts),
+        draw("draw-2", 2, "S17", setTwoCharts),
+      ],
+      ballots: [],
+      eligiblePlayers: [],
+      computedAt: "now",
+      randomIndex: () => 3,
+    });
+
+    expect(result.sets[0].tiebreakUsed).toBe(true);
+    expect(result.sets[0].zeroBallotTiebreak).toBe(true);
+    expect(result.sets[0].tiebreakCandidateIds).toHaveLength(7);
+    expect(result.sets[0].selectedChart.id).toBe("a-3");
+    expect(result.sets[0].wheelSupported).toBe(true);
+    expect(result.sets[0].wheelSlots.map((slot) => slot.id)).toEqual(
+      setOneCharts.map((candidate) => candidate.id),
+    );
+    expect(result.sets[1].selectedChart.id).toBe("b-3");
+    expect(result.sets[1].wheelSlots).toHaveLength(7);
+  });
+
+  it("keeps non-zero 5+ least-ban ties on the fallback reveal", () => {
+    const setOneCharts = Array.from({ length: 7 }, (_, index) =>
+      chart(`a-${index}`, `Alpha ${index}`),
+    );
+    const setTwoCharts = Array.from({ length: 7 }, (_, index) =>
+      chart(`b-${index}`, `Bravo ${index}`),
+    );
+
+    const result = computeRoundResult({
+      id: "result",
+      roundNumber: 1,
+      draws: [
+        draw("draw-1", 1, "S16", setOneCharts),
+        draw("draw-2", 2, "S17", setTwoCharts),
+      ],
+      ballots: [ballot("p1", ["a-6"], ["b-6"])],
+      eligiblePlayers: [{ id: "p1", startggUsername: "p1" }],
+      computedAt: "now",
+      randomIndex: () => 0,
+    });
+
+    expect(result.sets[0].tiebreakCandidateIds).toHaveLength(6);
+    expect(result.sets[0].zeroBallotTiebreak).toBe(false);
+    expect(result.sets[0].wheelSupported).toBe(false);
+    expect(result.sets[0].wheelSlots).toEqual([]);
+  });
 });

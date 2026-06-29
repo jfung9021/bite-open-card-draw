@@ -208,6 +208,10 @@ export type Database = {
           draw_version: number;
           status: string;
           eligible_pool_count: number;
+          eligible_chart_ids: Uuid[];
+          excluded_chart_keys_snapshot: string[];
+          selected_song_keys_snapshot: string[];
+          same_round_blocked_song_keys_snapshot: string[];
           admin_action_id: Uuid | null;
           reason: string | null;
           created_at: Timestamp;
@@ -219,6 +223,10 @@ export type Database = {
           draw_version?: number;
           status?: string;
           eligible_pool_count?: number;
+          eligible_chart_ids?: Uuid[];
+          excluded_chart_keys_snapshot?: string[];
+          selected_song_keys_snapshot?: string[];
+          same_round_blocked_song_keys_snapshot?: string[];
           admin_action_id?: Uuid | null;
           reason?: string | null;
           created_at?: Timestamp;

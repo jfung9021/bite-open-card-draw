@@ -167,6 +167,12 @@ describe("normalized operational state repository", () => {
     expect(supabase.rows.get("ballots")?.[0]).toMatchObject({
       edit_token_hash: "hash-from-phone",
     });
+    expect(supabase.rows.get("draws")?.[0]).toMatchObject({
+      eligible_chart_ids: firstDraw.eligibleChartIds,
+      excluded_chart_keys_snapshot: firstDraw.excludedChartKeysSnapshot,
+      selected_song_keys_snapshot: firstDraw.selectedSongKeysSnapshot,
+      same_round_blocked_song_keys_snapshot: firstDraw.sameRoundBlockedSongKeysSnapshot,
+    });
     expect(supabase.rows.get("result_rows")?.some((row) => row.draw_id === firstDraw.id)).toBe(
       true,
     );
@@ -184,6 +190,7 @@ describe("normalized operational state repository", () => {
     expect(restored?.draw.drawHistory[0]).toMatchObject({
       id: firstDraw.id,
       roundSetId: firstDraw.roundSetId,
+      eligibleChartIds: firstDraw.eligibleChartIds,
     });
     expect(restored?.ballot.ballots[0]?.choices[0]).toMatchObject({
       drawId: firstDraw.id,

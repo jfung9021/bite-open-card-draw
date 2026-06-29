@@ -120,7 +120,7 @@ Companion remediation plan: `docs/comprehensive-review-remediation-plan-2026-06-
     this item stays unchecked until Supabase RPC/row-scoped timer mutations use
     database time rather than app-server time.
 
-- [ ] CR-004 - Future-round selected-song blocking can be bypassed by drawing ahead.
+- [x] CR-004 - Future-round selected-song blocking can be bypassed by drawing ahead.
   - Severity: High.
   - Files: `src/app/coolguy69/actions.ts:728`,
     `src/app/coolguy69/actions.ts:742`, `src/app/coolguy69/actions.ts:802`,
@@ -136,6 +136,10 @@ Companion remediation plan: `docs/comprehensive-review-remediation-plan-2026-06-
   - Suggested tests: compute Round 1 with a song also present in Round 2, attempt
     Round 2 draw before final reveal, and assert it is blocked or excludes selected
     songs.
+  - Phase 4 closure: selected-song blocks are reconciled from all computed result
+    snapshots, not only final reveals. Computing results immediately updates draw
+    eligibility, clearing/reopening/recomputing removes stale blocks, overrides
+    resync corrected winners, and restore derives blocks from computed results.
 
 - [ ] CR-005 - Stage QR/timer placement does not match the validation checklist.
   - Severity: High.
@@ -195,7 +199,7 @@ Companion remediation plan: `docs/comprehensive-review-remediation-plan-2026-06-
 
 ## Medium
 
-- [ ] CR-009 - Zero-ballot result path uses the 5+ tie fallback instead of the
+- [x] CR-009 - Zero-ballot result path uses the 5+ tie fallback instead of the
   checklist's all-7-chart spinner.
   - Severity: Medium.
   - Files: `src/lib/results/result-engine.ts:68`,
@@ -208,8 +212,11 @@ Companion remediation plan: `docs/comprehensive-review-remediation-plan-2026-06-
     selector that still uses a precommitted backend winner.
   - Suggested tests: zero ballots in both sets; verify each set has 7 tiebreak
     candidates and a backend-decided winner reveal.
+  - Phase 4 closure: true zero-ballot sets now use a backend-decided tiebreak across
+    all seven drawn charts with seven wheel slots. Non-zero 5+ least-ban ties remain
+    on the safe fallback path.
 
-- [ ] CR-010 - Failed rerolls can mutate draw history before replacement succeeds.
+- [x] CR-010 - Failed rerolls can mutate draw history before replacement succeeds.
   - Severity: Medium.
   - Files: `src/lib/draw/draw-state.ts:178`,
     `src/lib/draw/draw-state.ts:264`, `src/lib/draw/draw-state.ts:276`.
@@ -221,8 +228,11 @@ Companion remediation plan: `docs/comprehensive-review-remediation-plan-2026-06-
     make full-round reroll atomic or roll back both sets on failure.
   - Suggested tests: active draw remains active after a failed set reroll; full-round
     reroll leaves both previous active draws intact if the second set cannot be drawn.
+  - Phase 4 closure: draw creation now plans and validates eligibility before
+    superseding active history. Full-round rerolls plan both replacement sets before
+    committing either one.
 
-- [ ] CR-011 - Reroll-one-chart can redraw the exact same chart.
+- [x] CR-011 - Reroll-one-chart can redraw the exact same chart.
   - Severity: Medium.
   - Files: `src/lib/draw/draw-state.ts:197`, `src/lib/draw/draw-state.ts:217`.
   - Current behavior: replacement eligibility excludes the other six current charts
@@ -232,8 +242,11 @@ Companion remediation plan: `docs/comprehensive-review-remediation-plan-2026-06-
     replacement pool; error if no replacement exists.
   - Suggested tests: deterministic RNG tries to pick the target chart; assert the
     replacement differs.
+  - Phase 4 closure: reroll-one-chart excludes every current chart key including the
+    target. It also prefers to block the target song, falling back only to a different
+    chart from the target song if no different-song replacement exists.
 
-- [ ] CR-012 - Draws do not snapshot the full eligible pool.
+- [x] CR-012 - Draws do not snapshot the full eligible pool.
   - Severity: Medium.
   - Files: `src/lib/draw/draw-state.ts:20`, `src/lib/draw/draw-state.ts:289`,
     `src/lib/server/normalized-operational-state.ts:535`,
@@ -245,6 +258,10 @@ Companion remediation plan: `docs/comprehensive-review-remediation-plan-2026-06-
     snapshot metadata with each draw.
   - Suggested tests: draw a set, change exclusions/source data, then verify audit can
     reconstruct the original eligible pool.
+  - Phase 4 closure: draw records now persist `eligibleChartIds`,
+    `excludedChartKeysSnapshot`, `selectedSongKeysSnapshot`, and
+    `sameRoundBlockedSongKeysSnapshot` in operational snapshots and normalized
+    `draws` rows.
 
 - [x] CR-013 - Transactional Supabase RPCs acknowledge success without mutating state.
   - Severity: Medium.
@@ -541,7 +558,7 @@ Companion remediation plan: `docs/comprehensive-review-remediation-plan-2026-06-
   - Suggested tests: 100 players submit/edit, `/stage` polling, `/coolguy69` host
     open, `/charts` spectators, and final CSV verification under load.
 
-- [ ] CR-032 - Source docs still conflict on result reveal order.
+- [x] CR-032 - Source docs still conflict on result reveal order.
   - Severity: Medium.
   - Files: `docs/codex-execution-plan.md:146`,
     `docs/codex-execution-plan.md:154`,
@@ -554,6 +571,8 @@ Companion remediation plan: `docs/comprehensive-review-remediation-plan-2026-06-
   - Suggested fix: update stale docs/phase notes to remove the old order.
   - Suggested tests: keep result-engine test asserting least-to-most order; add a doc
     consistency grep/test if desired.
+  - Phase 4 closure: stale result-order text in `docs/codex-execution-plan.md` and
+    `docs/phase-status.md` now says least banned to most banned.
 
 ## Low
 

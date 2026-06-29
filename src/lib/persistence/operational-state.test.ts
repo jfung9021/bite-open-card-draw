@@ -52,7 +52,10 @@ function resultChart(id: string, songKey: string): DrawnChartSummary {
   };
 }
 
-function finalResult(songKey: string): RoundResultSnapshot {
+function finalResult(
+  songKey: string,
+  revealPhase: RoundResultSnapshot["revealPhase"] = "final",
+): RoundResultSnapshot {
   const first = resultChart("selected-1", songKey);
   const second = resultChart("selected-2", "other-song");
 
@@ -61,9 +64,9 @@ function finalResult(songKey: string): RoundResultSnapshot {
     roundNumber: 1,
     computedAt: "computed",
     eligiblePlayers: [],
-    revealPhase: "final",
-    revealPhaseStartedAt: "final",
-    finalRevealedAt: "final",
+    revealPhase,
+    revealPhaseStartedAt: revealPhase,
+    finalRevealedAt: revealPhase === "final" ? "final" : null,
     sets: [
       {
         drawId: "draw-1",
@@ -188,12 +191,14 @@ describe("operational state persistence", () => {
     expect(first.rosterStore.getPlayer(player.id)?.active).toBe(false);
   });
 
-  it("derives selected prior songs from persisted final results on restore", async () => {
+  it("derives selected prior songs from persisted computed results on restore", async () => {
     const repository = new MemoryOperationalStateRepository();
     const first = createAdminStateStores();
 
     first.drawStateStore.markSelectedSong("stale-memory-only");
-    first.resultStore.importSnapshot({ results: [finalResult("persisted-selected-song")] });
+    first.resultStore.importSnapshot({
+      results: [finalResult("persisted-selected-song", "computed")],
+    });
     await repository.save(createOperationalStateSnapshot(first, "saved"));
 
     const recreated = createAdminStateStores();
