@@ -4,7 +4,7 @@
 
 - Vercel project linked to this repository.
 - Supabase project with migrations applied through
-  `20260630041000_normalized_submit_ballot_rpc.sql`.
+  `20260701010000_production_readiness_transactions.sql`.
 - Production environment variables configured in Vercel project settings only.
 
 Do not commit `.env`, `.env.local`, Supabase service-role keys, Vercel tokens, session secrets, or plaintext admin passwords.
@@ -25,6 +25,9 @@ TOURNAMENT_STATE_BACKEND=supabase
 ```
 
 Generate `ADMIN_PASSWORD_HASH` with the supported `scrypt:v1:<salt_hex>:<hash_hex>` format. Store the plaintext shared admin password outside the repo.
+
+Do not configure `TOURNAMENT_TEST_ROUTE_TOKEN` in production. It is only for non-production e2e
+helpers, and `/api/e2e/load-ballot` is hard-disabled when `NODE_ENV=production`.
 
 ## Build Verification
 
@@ -58,6 +61,9 @@ Do not use the release for tournament operation until:
   rehearsal id, including `phase9-e2e-2026-06-30-prod-23`,
   `phase9-load-2026-06-30-prod-07`, or `phase9-fourround-2026-06-30-prod-05`, for the real
   tournament.
+- Supabase migrations are applied through
+  `20260701010000_production_readiness_transactions.sql`.
+- `TOURNAMENT_TEST_ROUTE_TOKEN` is absent from production environment variables.
 - `rtk npm run cache:chart-images` produces at least one non-fallback cached artwork file and
   `public/chart-images/cache` or the chosen controlled storage has real files.
 - Rehearsal mode has been reset or a clean production event namespace has been selected before real

@@ -454,7 +454,7 @@ export class VotingWindowStore {
     let closesAtMs = parseIso(record.closesAt) ?? nowMs;
 
     if (
-      record.status === "voting_open" &&
+      (record.status === "voting_open" || record.status === "extension_1_minute") &&
       nowMs < closesAtMs &&
       eligibleCount > 0 &&
       submittedCount >= eligibleCount

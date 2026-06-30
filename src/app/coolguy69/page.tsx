@@ -292,6 +292,25 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   After both current-round sets are drawn, seed ballots that create a two-chart
                   least-ban tie.
                 </p>
+                <p className="mt-2 text-xs font-bold text-ember-300">
+                  Dangerous action: this can open voting and creates manual-admin rehearsal ballots.
+                </p>
+                <input
+                  name="adminPassword"
+                  type="password"
+                  required
+                  disabled={!canControl || !roundSnapshot.rehearsalMode}
+                  placeholder="Admin password"
+                  className="mt-3 w-full rounded border border-metal-700 bg-black/30 px-3 py-2 text-sm text-white"
+                />
+                <textarea
+                  name="reason"
+                  required
+                  disabled={!canControl || !roundSnapshot.rehearsalMode}
+                  rows={2}
+                  placeholder="Audit reason"
+                  className="mt-3 w-full rounded border border-metal-700 bg-black/30 px-3 py-2 text-sm text-white"
+                />
                 <button
                   className="button-metal mt-3 w-full rounded px-3 py-2 text-xs font-bold uppercase disabled:opacity-40"
                   disabled={!canControl || !roundSnapshot.rehearsalMode}

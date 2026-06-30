@@ -333,6 +333,24 @@ export type Database = {
           user_agent?: string | null;
         }
       >;
+      rate_limit_buckets: TableDefinition<
+        {
+          event_id: string;
+          bucket_key_hash: string;
+          count: number;
+          reset_at: Timestamp;
+          created_at: Timestamp;
+          updated_at: Timestamp;
+        },
+        {
+          event_id?: string;
+          bucket_key_hash: string;
+          count?: number;
+          reset_at: Timestamp;
+          created_at?: Timestamp;
+          updated_at?: Timestamp;
+        }
+      >;
       ballots: TableDefinition<
         {
           id: Uuid;
@@ -603,6 +621,7 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       normalized_submit_ballot: NormalizedRuntimeRpc;
+      normalized_check_rate_limit: NormalizedRuntimeRpc;
       normalized_manual_ballot_override: NormalizedRuntimeRpc;
       normalized_claim_voter_presence: NormalizedRuntimeRpc;
       normalized_touch_voter_presence: NormalizedRuntimeRpc;

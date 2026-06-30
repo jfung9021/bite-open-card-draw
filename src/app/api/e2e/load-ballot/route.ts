@@ -37,7 +37,17 @@ type LoadDrawnChartRow = {
   draw_order: number;
 };
 
-function testRouteAvailable() {
+function testRouteAvailable(request: Request) {
+  if (process.env.NODE_ENV === "production") {
+    return false;
+  }
+
+  const token = process.env.TOURNAMENT_TEST_ROUTE_TOKEN;
+
+  if (!token || request.headers.get("x-tournament-test-token") !== token) {
+    return false;
+  }
+
   return (
     process.env.TOURNAMENT_TEST_ALLOW_E2E_ROUTES === "true" ||
     (process.env.TOURNAMENT_STATE_BACKEND === "memory" &&
@@ -159,7 +169,7 @@ async function submitSupabaseLoadBallot(input: {
 }
 
 export async function POST(request: Request) {
-  if (!testRouteAvailable()) {
+  if (!testRouteAvailable(request)) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
@@ -185,6 +195,11 @@ export async function POST(request: Request) {
 
     const response = await withPersistedVotingState(async () => {
       const nowMs = await getAuthoritativeNowMs();
+      adminState.votingWindowStore.advanceVoting(
+        roundNumber,
+        getSubmittedPlayerIdsForRound(roundNumber),
+        nowMs,
+      );
       const snapshot = getVotingRoundSnapshot(roundNumber, nowMs);
 
       if (!snapshot.canSubmit) {

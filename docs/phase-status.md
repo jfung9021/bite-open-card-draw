@@ -2,8 +2,9 @@
 
 ## Current Remediation Status
 
-Status: Phase 9 hosted Supabase rehearsal is complete. Final tournament readiness still depends on
-the release checklist, production event namespace/reset, and any event-day data/operator checks.
+Status: Production readiness remediation code is complete. Final tournament readiness still depends
+on applying the latest Supabase migration, completing the release checklist evidence, selecting or
+resetting the production event namespace, and any event-day data/operator checks.
 
 The app is not event-ready until every item in `docs/remediation-issue-checklist.md` is closed
 with evidence and the final closure gate in that checklist passes. The authoritative behavior
@@ -22,6 +23,84 @@ called out as a required-read project document. As of this Phase 0 remediation n
 --short` reports it as untracked alongside the remediation plan and issue checklist, so these docs
 must be added to version control before release if they are not already tracked by the user's
 branch workflow.
+
+## Production Readiness Remediation - 2026-07-01
+
+Status: complete for code and local validation; not event-ready until the release checklist and
+external deployment gates are complete.
+
+### Acceptance Criteria
+
+- Supabase ballot submission, voting-window advancement, and result computation now run through
+  transactional RPCs with row locks, validation, duplicate-result protection, result snapshots,
+  result rows, and server-side tiebreak records.
+- Supabase result computation is wired into the admin action path instead of using in-memory
+  computation followed by persistence.
+- Durable Supabase-backed rate limiting covers admin password/session and voting mutation attempts.
+- Public vote live state no longer exposes eligible or submitted player id lists to browsers.
+- Duplicate start.gg username confirmation now claims presence before confirming the voter identity
+  and keeps the warning visible across ballot states.
+- `/api/e2e/load-ballot` is blocked in production and requires `TOURNAMENT_TEST_ROUTE_TOKEN` for
+  non-production e2e use.
+- Rehearsal tiebreak seeding is treated as a dangerous action with password re-entry and audit
+  reason.
+- Playwright load/phase9 harnesses send the test-route token and use the dev-server harness where
+  synthetic e2e mutation helpers are required.
+
+### Changed Files
+
+- Supabase/runtime: `supabase/migrations/20260701010000_production_readiness_transactions.sql`,
+  `src/lib/server/normalized-results.ts`, `src/lib/server/rate-limit.ts`,
+  `src/lib/server/repositories/normalized-runtime.ts`, `src/lib/db/database.types.ts`,
+  `src/lib/db/schema.ts`.
+- Admin/voting surfaces: `src/app/coolguy69/actions.ts`, `src/app/coolguy69/page.tsx`,
+  `src/app/vote/actions.ts`, `src/app/vote/BallotFlow.tsx`, `src/app/vote/page.tsx`,
+  `src/app/api/e2e/load-ballot/route.ts`.
+- Tests and harnesses: `playwright.env.ts`, `scripts/run-playwright.mjs`, `package.json`,
+  `.github/workflows/ci.yml`, `src/app/api/e2e/load-ballot/route.test.ts`,
+  `src/lib/server/security-boundary.test.ts`,
+  `src/lib/server/transactions/normalized-runtime.test.ts`,
+  `src/lib/server/rate-limit.test.ts`, `src/lib/vote/voting-window.test.ts`,
+  `tests/e2e/full-flow.spec.ts`, `tests/e2e/mobile-routes.spec.ts`,
+  `tests/load/load-rehearsal.spec.ts`, `tests/phase9/hosted-four-round.spec.ts`.
+- Release docs: `docs/production-readiness-remediation-2026-07-01.md`,
+  `docs/deployment-readiness.md`, `docs/release-checklist.md`, `docs/phase-status.md`,
+  `.env.example`.
+
+### Checks Run
+
+- `rtk npm run lint` - passed.
+- `rtk npm run typecheck` - passed.
+- `rtk npm run test` - passed, 38 files / 149 tests.
+- `rtk npm run build` - passed.
+- `rtk npm run test:e2e` - passed, 4 Playwright tests.
+- `rtk npm run test:load` - passed, 100-player browser rehearsal.
+- `rtk npm run test:phase9` - passed, four-round hosted-rehearsal spec.
+- `rtk npm run import:charts` - passed, 4,426 charts imported with required pool counts.
+- `rtk npm run cache:chart-images` - passed, 639 cached and 0 fallback image assets.
+- `rtk npm run verify:real-chart-images` - passed, 639 non-fallback cached images for 4,426 charts.
+- `rtk npm audit --omit=dev` - passed, 0 vulnerabilities.
+- `rtk git diff --check` - passed.
+
+### Manual Review
+
+- Product rules were not changed: four rounds, two sets per round, seven drawn charts, max two bans
+  per set, no-ban completion, server tiebreaks, and final dual-chart reveal remain intact.
+- Browser code still cannot access service-role keys, session secrets, password hashes, or the new
+  test-route token.
+- The e2e load route remains available only for non-production test configurations with an explicit
+  shared token.
+
+### Risks And Assumptions
+
+- The Supabase migration must be applied through
+  `20260701010000_production_readiness_transactions.sql` before running with
+  `TOURNAMENT_STATE_BACKEND=supabase`.
+- `TOURNAMENT_TEST_ROUTE_TOKEN` must not be configured in production.
+- Local phase9 now uses the dev-server harness unless explicitly configured otherwise; a separate
+  hosted Supabase rehearsal still depends on valid hosted Supabase credentials and a disposable
+  `TOURNAMENT_EVENT_ID`.
+- `tmp-trace-phase9-close-22/` remains an unrelated untracked local artifact and was not modified.
 
 ## Release Closure - 2026-06-29
 

@@ -80,7 +80,6 @@ export async function getVoteLiveStateAction(
 
   const nowMs = await getAuthoritativeNowMs();
   const snapshot = getVotingRoundSnapshot(roundNumber, nowMs);
-  const submittedPlayerIds = getSubmittedPlayerIdsForRound(roundNumber);
   const result = adminState.resultStore.getRoundResult(roundNumber);
 
   return {
@@ -89,8 +88,8 @@ export async function getVoteLiveStateAction(
     statusLabel: formatVotingStatusLabel(snapshot.status),
     timerText: formatVotingTime(snapshot.remainingMs),
     turnoutText: `Ballots submitted: ${snapshot.submittedCount} / ${snapshot.eligibleCount}`,
-    eligiblePlayerIds: snapshot.eligiblePlayers.map((player) => player.id),
-    submittedPlayerIds,
+    eligibleCount: snapshot.eligibleCount,
+    submittedCount: snapshot.submittedCount,
     existingBallotLookup: playerId
       ? buildPublicBallotLookup(adminState.ballotStore.get(roundNumber, playerId), editToken)
       : null,
@@ -104,7 +103,7 @@ export async function claimVoterPresenceAction(input: {
   deviceId: string;
 }) {
   assertPublicIdentifierLengths(input);
-  assertRateLimit({
+  await assertRateLimit({
     key: `voter-presence:${input.roundNumber}:${input.playerId}:${input.deviceId}`,
     limit: 12,
     windowMs: 60_000,
@@ -133,7 +132,7 @@ export async function claimVoterPresenceAction(input: {
 
 export async function submitRoundBallotAction(input: PublicSubmitRoundBallotInput) {
   assertPublicIdentifierLengths(input);
-  assertRateLimit({
+  await assertRateLimit({
     key: `ballot-submit:${input.roundNumber}:${input.playerId}:${input.deviceId}`,
     limit: 10,
     windowMs: 60_000,
@@ -169,6 +168,11 @@ export async function submitRoundBallotAction(input: PublicSubmitRoundBallotInpu
 
   const publicBallot = await withPersistedVotingState(async () => {
     const nowMs = await getAuthoritativeNowMs();
+    adminState.votingWindowStore.advanceVoting(
+      input.roundNumber,
+      getSubmittedPlayerIdsForRound(input.roundNumber),
+      nowMs,
+    );
     const snapshot = getVotingRoundSnapshot(input.roundNumber, nowMs);
     const player = snapshot.eligiblePlayers.find((candidate) => candidate.id === input.playerId);
 

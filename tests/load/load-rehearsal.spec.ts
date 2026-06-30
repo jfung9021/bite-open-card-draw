@@ -12,6 +12,16 @@ function getAdminPassword() {
 }
 
 const ADMIN_PASSWORD = getAdminPassword();
+
+function getTestRouteHeaders() {
+  const token = process.env.E2E_TEST_ROUTE_TOKEN;
+
+  if (!token) {
+    throw new Error("Missing E2E_TEST_ROUTE_TOKEN from Playwright config.");
+  }
+
+  return { "x-tournament-test-token": token };
+}
 const PLAYER_COUNT = 100;
 const LOAD_CONCURRENCY = Number(process.env.E2E_LOAD_CONCURRENCY ?? 6);
 const HOSTED_REFRESH_TIMEOUT_MS = 15_000;
@@ -53,6 +63,7 @@ async function submitAndEditBallot(
 ) {
   for (const revision of [1, 2] as const) {
     const response = await request.post(route(baseURL, "/api/e2e/load-ballot"), {
+      headers: getTestRouteHeaders(),
       data: {
         roundNumber: 1,
         playerStartggUsername: startggUsername,

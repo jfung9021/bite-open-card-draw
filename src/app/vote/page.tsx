@@ -4,7 +4,6 @@ import { getAuthoritativeNowMs } from "@/lib/server/authoritative-clock";
 import { hydrateTournamentState } from "@/lib/server/persistence";
 import {
   getRoundDrawRecords,
-  getSubmittedPlayerIdsForRound,
   getVotingRoundSnapshot,
 } from "@/lib/server/voting-round";
 import { shouldShowFinalPhoneResults } from "@/lib/vote/phone-view";
@@ -21,7 +20,6 @@ export default async function VotePage() {
   const nowMs = await getAuthoritativeNowMs();
   const snapshot = getVotingRoundSnapshot(roundNumber, nowMs);
   const draws = getRoundDrawRecords(roundNumber);
-  const submittedPlayerIds = getSubmittedPlayerIdsForRound(roundNumber);
   const phoneStatus = adminState.ballotStore.getPhoneStatus(roundNumber);
   const result = adminState.resultStore.getRoundResult(roundNumber);
   const showFinalPhoneResults = shouldShowFinalPhoneResults(snapshot.status, result?.revealPhase);
@@ -117,12 +115,10 @@ export default async function VotePage() {
           roundNumber={roundNumber}
           players={snapshot.eligiblePlayers}
           draws={draws}
-          submittedPlayerIds={submittedPlayerIds}
           statusLabel={formatVotingStatusLabel(snapshot.status)}
           timerText={formatVotingTime(snapshot.remainingMs)}
           turnoutText={`Ballots submitted: ${snapshot.submittedCount} / ${snapshot.eligibleCount}`}
           canSubmit={snapshot.canSubmit}
-          eligiblePlayerIds={snapshot.eligiblePlayers.map((player) => player.id)}
         />
       </section>
     </main>

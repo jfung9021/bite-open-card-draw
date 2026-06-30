@@ -12,6 +12,16 @@ function getAdminPassword() {
 }
 
 const ADMIN_PASSWORD = getAdminPassword();
+
+function getTestRouteHeaders() {
+  const token = process.env.E2E_TEST_ROUTE_TOKEN;
+
+  if (!token) {
+    throw new Error("Missing E2E_TEST_ROUTE_TOKEN from Playwright config.");
+  }
+
+  return { "x-tournament-test-token": token };
+}
 const HOSTED_REFRESH_TIMEOUT_MS = 15_000;
 
 function route(baseURL: string, path: string) {
@@ -27,8 +37,16 @@ async function loginAndTakeHost(page: Page, baseURL: string) {
   await page.getByLabel("Shared admin password").fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Log In" }).click();
   await expect(page.getByRole("heading", { name: "coolguy69" })).toBeVisible();
-  await page.getByRole("button", { name: /^(Force Host Takeover|Take Host Control)$/ }).click();
+  const hostControlButton = page.getByRole("button", {
+    name: /^(Force Host Takeover|Take Host Control)$/,
+  });
+
+  await expect(hostControlButton).toBeEnabled({ timeout: HOSTED_REFRESH_TIMEOUT_MS });
+  await hostControlButton.click();
   await expect(page.getByText("Voting Controls")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Release" })).toBeEnabled({
+    timeout: HOSTED_REFRESH_TIMEOUT_MS,
+  });
 }
 
 async function startRehearsalMode(page: Page) {
@@ -36,6 +54,9 @@ async function startRehearsalMode(page: Page) {
     has: page.getByRole("button", { name: "Start Rehearsal" }),
   });
 
+  await expect(rehearsalForm.getByRole("button", { name: "Start Rehearsal" })).toBeEnabled({
+    timeout: HOSTED_REFRESH_TIMEOUT_MS,
+  });
   await rehearsalForm.getByPlaceholder("Admin password").fill(ADMIN_PASSWORD);
   await rehearsalForm.getByPlaceholder("Audit reason").fill("Phase 9 hosted four-round rehearsal");
   await page.getByRole("button", { name: "Start Rehearsal" }).click();
@@ -76,6 +97,7 @@ async function submitBallot(
   revision: 1 | 2 = 1,
 ) {
   const response = await request.post(route(baseURL, "/api/e2e/load-ballot"), {
+    headers: getTestRouteHeaders(),
     data: {
       roundNumber,
       playerStartggUsername,
@@ -208,6 +230,11 @@ test("hosted Supabase four-round rehearsal covers tiebreaks, manual ballots, and
     await expect(page.getByText("voting open")).toBeVisible();
 
     if (roundNumber === 1) {
+      const seedTiebreakForm = page.locator("form", {
+        has: page.getByRole("button", { name: "Seed Tiebreak" }),
+      });
+      await seedTiebreakForm.getByPlaceholder("Admin password").fill(ADMIN_PASSWORD);
+      await seedTiebreakForm.getByPlaceholder("Audit reason").fill("phase9 forced tiebreak");
       await page.getByRole("button", { name: "Seed Tiebreak" }).click();
       await expect(page.getByText("Seeded rehearsal tiebreak ballots")).toBeVisible();
     } else {

@@ -131,6 +131,7 @@ export const resetRoundInputSchema = z.object({
 
 export const computeResultsInputSchema = z.object({
   roundNumber: roundNumberSchema,
+  adminSessionId: uuidSchema.optional(),
 });
 
 export const commitTiebreakInputSchema = z.object({

@@ -24,6 +24,8 @@ workflow.
 - [ ] `docs/remediation-plan-2026-06-28.md` has been reviewed for the current release.
 - [ ] Every item in `docs/remediation-issue-checklist.md` is closed with evidence.
 - [ ] The final closure gate in `docs/remediation-issue-checklist.md` passes.
+- [ ] `docs/production-readiness-remediation-2026-07-01.md` has been reviewed and its required
+      release evidence is complete.
 - [ ] `docs/product-spec.md` and `docs/pump_open_stage_repo_validation_checklist.md` have been used
       as the final behavior source of truth for release review.
 
@@ -38,6 +40,7 @@ workflow.
 - [ ] `TOURNAMENT_STATE_BACKEND=supabase` is set in Vercel.
 - [ ] `TOURNAMENT_EVENT_ID` is set in Vercel to the real event namespace, not a Phase 9 rehearsal
       id.
+- [ ] `TOURNAMENT_TEST_ROUTE_TOKEN` is not set in production.
 - [ ] No `.env` or `.env.local` file is committed.
 
 ## Data

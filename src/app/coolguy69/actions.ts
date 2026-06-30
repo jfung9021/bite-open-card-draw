@@ -22,11 +22,13 @@ import {
   assertMaxStringLength,
 } from "@/lib/server/input-limits";
 import {
+  getTournamentStateBackend,
   hydrateTournamentState,
   persistTournamentState,
   withPersistedHostLockState,
   withPersistedVotingAdminState,
 } from "@/lib/server/persistence";
+import { computeNormalizedResults } from "@/lib/server/normalized-results";
 import {
   getRoundDrawRecords,
   getSubmittedPlayerIdsForRound,
@@ -798,6 +800,14 @@ export async function computeResultsAction(formData: FormData) {
 
   try {
     const roundNumber = getRoundNumber(formData);
+
+    if (getTournamentStateBackend() === "supabase") {
+      await computeNormalizedResults({ roundNumber, adminSessionId: session.sessionId });
+      await hydrateTournamentState();
+      revalidateTournamentViews(revalidatePath);
+      return;
+    }
+
     const nowMs = await getAuthoritativeNowMs();
     advanceVotingDeadline(roundNumber, nowMs);
     const snapshot = getVotingRoundSnapshot(roundNumber, nowMs);
@@ -1004,10 +1014,12 @@ export async function resetRehearsalModeAction(formData: FormData) {
   revalidateTournamentViews(revalidatePath);
 }
 
-export async function seedRehearsalTiebreakAction() {
+export async function seedRehearsalTiebreakAction(formData: FormData) {
   const session = await requireActiveHost();
 
   try {
+    await verifyDangerousActionPassword(getAdminPassword(formData));
+    const reason = getRequiredReason(formData);
     const { currentRound, rehearsalMode } = adminState.roundStateStore.getSnapshot();
     const nowMs = await getAuthoritativeNowMs();
 
@@ -1078,6 +1090,8 @@ export async function seedRehearsalTiebreakAction() {
     audit(session, {
       action: "seed_rehearsal_tiebreak",
       summary: `Seeded rehearsal tiebreak ballots for Round ${currentRound}.`,
+      reason,
+      dangerous: true,
       metadata: { roundNumber: currentRound, playerCount: players.length },
     });
   } catch (error) {

@@ -31,8 +31,16 @@ async function loginAndTakeHost(page: Page) {
   await page.getByLabel("Shared admin password").fill(ADMIN_PASSWORD);
   await page.getByRole("button", { name: "Log In" }).click();
   await expect(page.getByRole("heading", { name: "coolguy69" })).toBeVisible();
-  await page.getByRole("button", { name: /^(Force Host Takeover|Take Host Control)$/ }).click();
+  const hostControlButton = page.getByRole("button", {
+    name: /^(Force Host Takeover|Take Host Control)$/,
+  });
+
+  await expect(hostControlButton).toBeEnabled({ timeout: HOSTED_REFRESH_TIMEOUT_MS });
+  await hostControlButton.click();
   await expect(page.getByText("Voting Controls")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Release" })).toBeEnabled({
+    timeout: HOSTED_REFRESH_TIMEOUT_MS,
+  });
 }
 
 async function expectStageRows(page: Page) {
@@ -383,6 +391,11 @@ test("stage tiebreak wheel hides the winner until the five-second reveal complet
   await expectStageRows(stagePage);
   await expectRenderedRealStageImage(stagePage);
 
+  const seedTiebreakForm = page.locator("form", {
+    has: page.getByRole("button", { name: "Seed Tiebreak" }),
+  });
+  await seedTiebreakForm.getByPlaceholder("Admin password").fill(ADMIN_PASSWORD);
+  await seedTiebreakForm.getByPlaceholder("Audit reason").fill("e2e forced tiebreak");
   await page.getByRole("button", { name: "Seed Tiebreak" }).click();
   await page.getByRole("button", { name: "Close Voting" }).click();
   await expect(page.getByText("voting closed")).toBeVisible();
